@@ -10,7 +10,7 @@ const initialSettings: ViewSettings = {
   status: "all",
   continent: "all",
   clusterMarkers: true,
-  autoRotate: true,
+  autoRotate: false,
   atmosphere: true,
 };
 
@@ -26,31 +26,32 @@ export function filterRegions(regions: CloudRegion[], settings: ViewSettings) {
 export function App() {
   const [settings, setSettings] = useState(initialSettings);
   const [renderMode, setRenderMode] = useState<"3d" | "2d">("3d");
-  const [selected, setSelected] = useState<CloudRegion | null>(
+  const [selectedRegions, setSelectedRegions] = useState<CloudRegion[]>(() => [
     CLOUD_REGIONS.find((region) => region.code === "germanywestcentral") ?? CLOUD_REGIONS[0],
-  );
+  ]);
 
   const visibleRegions = useMemo(() => filterRegions(CLOUD_REGIONS, settings), [settings]);
 
   useEffect(() => {
-    if (visibleRegions.length === 0) {
-      setSelected(null);
-      return;
-    }
-    if (!selected || !visibleRegions.some((region) => region.id === selected.id)) {
-      setSelected(visibleRegions[0]);
-    }
-  }, [visibleRegions, selected]);
+    const visibleIds = new Set(visibleRegions.map((region) => region.id));
+    setSelectedRegions((current) => {
+      const stillVisible = current.filter((region) => visibleIds.has(region.id));
+      if (stillVisible.length === current.length) return current;
+      return stillVisible.length > 0 ? stillVisible : visibleRegions.slice(0, 1);
+    });
+  }, [visibleRegions]);
 
-  const handleSelect = (region: CloudRegion) => {
+  const handleSearchSelect = (region: CloudRegion) => {
     setSettings((current) => ({
       ...current,
       providers: { ...current.providers, [region.provider]: true },
-      status: region.status === "planned" && current.status === "active" ? "all" : current.status,
+      status: current.status !== "all" && current.status !== region.status ? "all" : current.status,
       continent: current.continent !== "all" && current.continent !== region.continent ? "all" : current.continent,
     }));
-    setSelected(region);
+    setSelectedRegions([region]);
   };
+
+  const handleMarkerSelect = (regions: CloudRegion[]) => setSelectedRegions(regions);
 
   return (
     <div className="app-shell">
@@ -69,26 +70,30 @@ export function App() {
       </header>
 
       <main className="workspace" id="weltkarte">
-        <DetailPanel region={selected} />
+        <DetailPanel regions={selectedRegions} />
         <GlobeCanvas
           regions={visibleRegions}
-          selected={selected}
+          selectedRegions={selectedRegions}
           clusterMarkers={settings.clusterMarkers}
           autoRotate={settings.autoRotate}
           atmosphere={settings.atmosphere}
-          onSelect={handleSelect}
+          onSelect={handleMarkerSelect}
           onRenderModeChange={setRenderMode}
         />
         <SettingsPanel
           settings={settings}
           onChange={setSettings}
-          onSelect={handleSelect}
+          onSelect={handleSearchSelect}
           visibleRegions={visibleRegions}
           renderMode={renderMode}
         />
       </main>
       <div className="sr-only" role="status" aria-live="polite">
-        {selected ? `${selected.name}, ${selected.location} ausgewählt` : "Keine Region ausgewählt"}
+        {selectedRegions.length > 1
+          ? `${selectedRegions.length} Regionen bei ${selectedRegions[0].location} ausgewählt`
+          : selectedRegions[0]
+            ? `${selectedRegions[0].name}, ${selectedRegions[0].location} ausgewählt`
+            : "Keine Region ausgewählt"}
       </div>
     </div>
   );

@@ -46,7 +46,7 @@ export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mod
     <Suspense fallback={<div className="globe-loading" role="status">Kartenansicht wird geladen</div>}>
       <FlatWorldMap
         regions={props.regions}
-        selected={props.selected}
+        selectedRegions={props.selectedRegions}
         clusterMarkers={props.clusterMarkers}
         onSelect={props.onSelect}
       />

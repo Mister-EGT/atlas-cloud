@@ -3,22 +3,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import { Color, MeshPhongMaterial, type PerspectiveCamera } from "three";
 import { PROVIDERS, type CloudRegion } from "../data/regions";
-import { groupRegions, type GlobeMarker } from "./globeMarkers";
+import {
+  getMarkerAriaLabel,
+  getMarkerLocation,
+  getMarkerProviderStates,
+  groupRegions,
+  type GlobeMarker,
+} from "./globeMarkers";
 import { countryFeatures } from "./worldMapData";
 
 export interface WebGLGlobeProps {
   regions: CloudRegion[];
-  selected: CloudRegion | null;
+  selectedRegions: CloudRegion[];
   clusterMarkers: boolean;
   autoRotate: boolean;
   atmosphere: boolean;
-  onSelect: (region: CloudRegion) => void;
+  onSelect: (regions: CloudRegion[]) => void;
 }
 
-export function WebGLGlobe({ regions, selected, clusterMarkers, autoRotate, atmosphere, onSelect }: WebGLGlobeProps) {
+export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotate, atmosphere, onSelect }: WebGLGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const [size, setSize] = useState({ width: 700, height: 700 });
+  const primarySelected = selectedRegions[0];
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
   const globeMaterial = useMemo(() => new MeshPhongMaterial({
     color: new Color("#102438"),
@@ -29,50 +36,75 @@ export function WebGLGlobe({ regions, selected, clusterMarkers, autoRotate, atmo
 
   const createHtmlMarker = useCallback((item: object) => {
     const marker = item as GlobeMarker;
-    const first = marker.regions[0];
-    const provider = marker.provider === "mixed" ? "Mehrere Anbieter" : PROVIDERS[marker.provider].name;
-    const markerColor = marker.provider === "mixed"
-      ? "#f5f7fa"
-      : first.status === "planned"
-        ? "#9aa4af"
-        : PROVIDERS[marker.provider].color;
+    const providerStates = getMarkerProviderStates(marker);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "globe-html-marker";
     button.dataset.regionCodes = marker.regions.map((region) => region.code ?? region.id).join(" ");
-    button.style.setProperty("--marker-color", markerColor);
-    button.setAttribute("aria-label", `${first.name}, ${first.location} auswählen`);
-    if (selected && marker.regions.some((region) => region.id === selected.id)) {
+    button.dataset.providerCount = String(marker.providers.length);
+    button.setAttribute("aria-label", getMarkerAriaLabel(marker));
+    if (selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id))) {
       button.classList.add("is-selected");
     }
 
+    providerStates.forEach((providerState) => {
+      const dot = document.createElement("span");
+      dot.className = `globe-html-marker__dot is-${providerState.status}`;
+      dot.style.setProperty("--marker-color", PROVIDERS[providerState.provider].color);
+      dot.setAttribute("aria-hidden", "true");
+      button.append(dot);
+    });
+
     const tooltipElement = document.createElement("span");
     tooltipElement.className = "globe-html-marker__tooltip";
-    const providerElement = document.createElement("small");
-    providerElement.textContent = provider;
+    const providerElement = document.createElement("span");
+    providerElement.className = "globe-html-marker__providers";
+    providerStates.forEach((providerState) => {
+      const providerBadge = document.createElement("small");
+      providerBadge.className = `is-${providerState.status}`;
+      providerBadge.style.setProperty("--provider-color", PROVIDERS[providerState.provider].color);
+      providerBadge.textContent = `${PROVIDERS[providerState.provider].shortName}${providerState.status === "planned" ? " · geplant" : providerState.status === "mixed" ? " · aktiv + geplant" : ""}`;
+      providerElement.append(providerBadge);
+    });
     const nameElement = document.createElement("strong");
-    nameElement.textContent = first.name;
-    const codeElement = document.createElement("code");
-    codeElement.textContent = first.code ?? "Code folgt";
+    nameElement.textContent = marker.regions.length === 1
+      ? marker.regions[0].name
+      : `${marker.regions.length} Regionen bei ${getMarkerLocation(marker)}`;
+    const regionList = document.createElement("span");
+    regionList.className = "globe-html-marker__regions";
+    marker.regions.forEach((region) => {
+      const regionLine = document.createElement("span");
+      const codeElement = document.createElement("code");
+      codeElement.textContent = region.code ?? "Code folgt";
+      const regionName = document.createElement("span");
+      regionName.textContent = region.name;
+      regionLine.append(codeElement, regionName);
+      regionList.append(regionLine);
+    });
     const metaElement = document.createElement("span");
+    const first = marker.regions[0];
     metaElement.textContent = marker.regions.length > 1
-      ? `${marker.regions.length} Regionen an diesem Standort`
+      ? "Klicken, um alle Details zu öffnen"
       : first.zones
         ? `${first.zones} Zonen`
         : first.availabilityZones
           ? "Verfügbarkeitszonen unterstützt"
           : first.country;
 
-    tooltipElement.append(providerElement, nameElement, codeElement, metaElement);
+    tooltipElement.append(providerElement, nameElement, regionList, metaElement);
     button.append(tooltipElement);
     const showTooltip = () => {
       button.classList.add("is-hovered");
+      const controls = globeRef.current?.controls();
+      if (controls) controls.autoRotate = false;
       tooltipElement.style.visibility = "visible";
       tooltipElement.style.opacity = "1";
       tooltipElement.style.transform = "translate(-50%, 0) scale(0.8)";
     };
     const hideTooltip = () => {
       button.classList.remove("is-hovered");
+      const controls = globeRef.current?.controls();
+      if (controls) controls.autoRotate = autoRotate;
       tooltipElement.style.removeProperty("visibility");
       tooltipElement.style.removeProperty("opacity");
       tooltipElement.style.removeProperty("transform");
@@ -83,10 +115,10 @@ export function WebGLGlobe({ regions, selected, clusterMarkers, autoRotate, atmo
     button.addEventListener("blur", hideTooltip);
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      onSelect(first);
+      onSelect(marker.regions);
     });
     return button;
-  }, [onSelect, selected]);
+  }, [autoRotate, onSelect, selectedRegions]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -112,9 +144,9 @@ export function WebGLGlobe({ regions, selected, clusterMarkers, autoRotate, atmo
   }, [autoRotate]);
 
   useEffect(() => {
-    if (!selected || !globeRef.current) return;
-    globeRef.current.pointOfView({ lat: selected.lat, lng: selected.lng, altitude: 1.85 }, 650);
-  }, [selected?.id]);
+    if (!primarySelected || !globeRef.current) return;
+    globeRef.current.pointOfView({ lat: primarySelected.lat, lng: primarySelected.lng, altitude: 1.85 }, 650);
+  }, [primarySelected?.id]);
 
   const adjustZoom = (direction: "in" | "out") => {
     const globe = globeRef.current;
@@ -154,7 +186,7 @@ export function WebGLGlobe({ regions, selected, clusterMarkers, autoRotate, atmo
           htmlAltitude={0.014}
           htmlElement={createHtmlMarker}
           htmlTransitionDuration={180}
-          ringsData={selected ? [selected] : []}
+          ringsData={primarySelected ? [primarySelected] : []}
           ringLat="lat"
           ringLng="lng"
           ringColor={() => (time: number) => `rgba(48, 93, 222, ${1 - time})`}

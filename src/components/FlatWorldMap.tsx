@@ -1,18 +1,30 @@
 import { geoNaturalEarth1, geoPath } from "d3-geo";
 import { LocateFixed, Minus, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { PROVIDERS, type CloudRegion } from "../data/regions";
-import { groupRegions, type GlobeMarker } from "./globeMarkers";
+import {
+  getMarkerAriaLabel,
+  getMarkerLocation,
+  getMarkerProviderStates,
+  groupRegions,
+  type GlobeMarker,
+} from "./globeMarkers";
 import { countryFeatureCollection, countryFeatures } from "./worldMapData";
 
 const MAP_WIDTH = 960;
 const MAP_HEIGHT = 560;
 
-export function FlatWorldMap({ regions, selected, clusterMarkers, onSelect }: {
+const PROVIDER_DOT_POSITIONS = {
+  1: [[0, 0]],
+  2: [[-3.7, 0], [3.7, 0]],
+  3: [[-4.2, 1.7], [0, -3.2], [4.2, 1.7]],
+} as const;
+
+export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelect }: {
   regions: CloudRegion[];
-  selected: CloudRegion | null;
+  selectedRegions: CloudRegion[];
   clusterMarkers: boolean;
-  onSelect: (region: CloudRegion) => void;
+  onSelect: (regions: CloudRegion[]) => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [hovered, setHovered] = useState<GlobeMarker | null>(null);
@@ -54,36 +66,51 @@ export function FlatWorldMap({ regions, selected, clusterMarkers, onSelect }: {
           {countryPaths.map((countryPath, index) => <path key={index} d={countryPath} />)}
           {projectedMarkers.map(({ marker, point }) => {
             if (!point) return null;
-            const first = marker.regions[0];
-            const isSelected = selected && marker.regions.some((region) => region.id === selected.id);
-            const color = marker.provider === "mixed"
-              ? "#f5f7fa"
-              : first.status === "planned"
-                ? "#9aa4af"
-                : PROVIDERS[marker.provider].color;
+            const providerStates = getMarkerProviderStates(marker);
+            const isSelected = selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id));
+            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3];
+            const isCluster = marker.regions.length > 1;
             return (
               <g
                 key={marker.regions.map((region) => region.id).join(":")}
                 className={`flat-map__marker ${isSelected ? "is-selected" : ""}`}
                 data-region-codes={marker.regions.map((region) => region.code ?? region.id).join(" ")}
+                data-provider-count={marker.providers.length}
+                data-marker-status={marker.status}
                 role="button"
                 tabIndex={0}
-                aria-label={`${first.name}, ${first.location} auswählen`}
+                aria-label={getMarkerAriaLabel(marker)}
                 transform={`translate(${point[0]} ${point[1]})`}
                 onMouseEnter={() => setHovered(marker)}
                 onMouseLeave={() => setHovered(null)}
                 onFocus={() => setHovered(marker)}
                 onBlur={() => setHovered(null)}
-                onClick={() => onSelect(first)}
+                onClick={() => onSelect(marker.regions)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    onSelect(first);
+                    onSelect(marker.regions);
                   }
                 }}
               >
-                {isSelected ? <circle className="flat-map__selection" r="11" /> : null}
-                <circle r="6" fill={color} />
+                {isSelected ? <circle className="flat-map__selection" r={isCluster ? 13 : 11} /> : null}
+                {isCluster ? <circle className="flat-map__cluster-shell" r="9" /> : null}
+                {providerStates.map((providerState, index) => {
+                  const [cx, cy] = dotPositions[index];
+                  const color = PROVIDERS[providerState.provider].color;
+                  return (
+                    <circle
+                      key={providerState.provider}
+                      className={`flat-map__provider-dot is-${providerState.status}`}
+                      cx={cx}
+                      cy={cy}
+                      r={isCluster ? 3.7 : 6}
+                      fill={providerState.status === "planned" ? "#fff" : color}
+                      stroke={providerState.status === "planned" ? color : "#fff"}
+                    />
+                  );
+                })}
+                {marker.regions.length > 3 ? <text className="flat-map__cluster-count" x="8" y="-7">{marker.regions.length}</text> : null}
               </g>
             );
           })}
@@ -91,10 +118,28 @@ export function FlatWorldMap({ regions, selected, clusterMarkers, onSelect }: {
       </svg>
       {hovered && projectedHovered ? (
         <div className="flat-map__tooltip" style={{ left: `${(projectedHovered[0] / MAP_WIDTH) * 100}%`, top: `${(projectedHovered[1] / MAP_HEIGHT) * 100}%` }}>
-          <small>{hovered.provider === "mixed" ? "Mehrere Anbieter" : PROVIDERS[hovered.provider].name}</small>
-          <strong>{hovered.regions[0].name}</strong>
-          <code>{hovered.regions[0].code ?? "Code folgt"}</code>
-          <span>{hovered.regions.length > 1 ? `${hovered.regions.length} Regionen` : hovered.regions[0].country}</span>
+          <div className="marker-tooltip__providers">
+            {getMarkerProviderStates(hovered).map((providerState) => (
+              <small key={providerState.provider}>
+                <i
+                  className={providerState.status === "planned" ? "is-planned" : ""}
+                  style={{ "--provider-color": PROVIDERS[providerState.provider].color } as CSSProperties}
+                />
+                {PROVIDERS[providerState.provider].shortName}
+                {providerState.status === "planned" ? " · geplant" : providerState.status === "mixed" ? " · aktiv + geplant" : ""}
+              </small>
+            ))}
+          </div>
+          <strong>{hovered.regions.length === 1 ? hovered.regions[0].name : `${hovered.regions.length} Regionen bei ${getMarkerLocation(hovered)}`}</strong>
+          <div className="marker-tooltip__regions">
+            {hovered.regions.map((region) => (
+              <span key={region.id}>
+                <code>{region.code ?? "Code folgt"}</code>
+                <em>{region.name}</em>
+              </span>
+            ))}
+          </div>
+          <span>{hovered.regions.length > 1 ? "Klicken, um alle Details zu öffnen" : hovered.regions[0].country}</span>
         </div>
       ) : null}
       <div className="globe-controls" aria-label="Kartensteuerung">
