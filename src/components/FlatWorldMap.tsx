@@ -55,11 +55,13 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
     const markerRect = element.getBoundingClientRect();
     const markerCenter = markerRect.left - mapRect.left + markerRect.width / 2;
     const markerTop = markerRect.top - mapRect.top;
+    const tooltipWidth = Math.min(360, mapRect.width - 32);
+    const tooltipHalfWidth = tooltipWidth / 2;
     setHovered({
       marker,
-      left: Math.min(mapRect.width - 132, Math.max(132, markerCenter)),
+      left: Math.min(mapRect.width - tooltipHalfWidth - 8, Math.max(tooltipHalfWidth + 8, markerCenter)),
       top: markerTop,
-      placement: markerTop < 150 ? "below" : "above",
+      placement: markerTop < 210 ? "below" : "above",
     });
   };
 

@@ -99,7 +99,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
       if (controls) controls.autoRotate = false;
       tooltipElement.style.visibility = "visible";
       tooltipElement.style.opacity = "1";
-      tooltipElement.style.transform = "translate(-50%, 0) scale(0.8)";
+      tooltipElement.style.transform = "translate(-50%, 0) scale(1)";
     };
     const hideTooltip = () => {
       button.classList.remove("is-hovered");

@@ -388,7 +388,7 @@ button {
   grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  min-height: 72px;
+  min-height: 78px;
   padding: 9px 32px 9px 9px;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -418,12 +418,11 @@ button {
 }
 
 .grouped-region-card code {
-  overflow: hidden;
   color: var(--muted-foreground);
   font-family: "Geist Mono Variable", ui-monospace, monospace;
   font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .grouped-region-card .region-status {
@@ -699,16 +698,17 @@ button {
   position: absolute;
   z-index: 8;
   display: flex;
-  width: min(244px, calc(100vw - 48px));
+  width: min(360px, calc(100vw - 32px));
   transform: translate(-50%, calc(-100% - 12px));
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   background: #fff;
   box-shadow: var(--shadow-floating);
   pointer-events: none;
+  corner-shape: squircle;
 }
 
 .flat-map__tooltip.is-below {
@@ -717,21 +717,29 @@ button {
 
 .flat-map__tooltip > span {
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .marker-tooltip__providers {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
 }
 
-.marker-tooltip__providers small {
+.marker-tooltip__providers small,
+.globe-html-marker__providers small {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 23px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
   color: var(--muted-foreground);
-  font-size: 9px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .marker-tooltip__providers i,
@@ -753,39 +761,45 @@ button {
 }
 
 .flat-map__tooltip strong {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
+  line-height: 1.3;
 }
 
-.flat-map__tooltip code {
+.flat-map__tooltip code,
+.globe-html-marker__tooltip code {
+  overflow-wrap: anywhere;
   font-family: "Geist Mono Variable", ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .marker-tooltip__regions,
 .globe-html-marker__regions {
   display: flex;
-  max-height: 108px;
+  max-height: 180px;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
   overflow: auto;
 }
 
 .marker-tooltip__regions > span,
 .globe-html-marker__regions > span {
   display: grid;
-  grid-template-columns: minmax(58px, 0.7fr) minmax(0, 1.3fr);
-  gap: 7px;
-  align-items: baseline;
+  grid-template-columns: minmax(132px, 0.9fr) minmax(0, 1.1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 11px;
+  background: var(--background);
 }
 
 .marker-tooltip__regions em,
 .globe-html-marker__regions > span > span {
-  overflow: hidden;
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .globe-stage__canvas canvas {
@@ -947,15 +961,15 @@ button {
   bottom: calc(100% + 10px);
   left: 50%;
   display: flex;
-  min-width: 184px;
-  padding: 11px 13px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px 16px;
   visibility: hidden;
-  transform: translate(-50%, 4px) scale(0.8);
+  transform: translate(-50%, 4px) scale(0.96);
   transform-origin: bottom center;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 20px;
   opacity: 0;
   background: #fff;
   box-shadow: var(--shadow-floating);
@@ -963,13 +977,14 @@ button {
   font-family: "Inter Tight Variable", system-ui, sans-serif;
   text-align: left;
   pointer-events: none;
+  corner-shape: squircle;
 }
 
 .globe-html-marker:hover .globe-html-marker__tooltip,
 .globe-html-marker.is-hovered .globe-html-marker__tooltip,
 .globe-html-marker:focus-visible .globe-html-marker__tooltip {
   visibility: visible;
-  transform: translate(-50%, 0) scale(0.8);
+  transform: translate(-50%, 0) scale(1);
   opacity: 1;
 }
 
@@ -984,12 +999,6 @@ button {
   gap: 4px 8px;
 }
 
-.globe-html-marker__providers small {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .globe-html-marker__providers small.is-planned::before {
   border: 2px solid var(--provider-color);
   background: #fff;
@@ -997,22 +1006,19 @@ button {
 }
 
 .globe-html-marker__tooltip strong {
-  max-width: 220px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .globe-html-marker__tooltip code {
   color: color-mix(in srgb, var(--foreground) 78%, transparent);
-  font-family: "Geist Mono Variable", ui-monospace, monospace;
-  font-size: 11px;
 }
 
 .globe-html-marker__tooltip > span:last-child {
-  margin-top: 2px;
   color: var(--muted-foreground);
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .scene-tooltip {
