@@ -41,6 +41,11 @@ export function App() {
     });
   }, [visibleRegions]);
 
+  useEffect(() => {
+    if (settings.clusterMarkers) return;
+    setSelectedRegions((current) => current.length > 1 ? current.slice(0, 1) : current);
+  }, [settings.clusterMarkers]);
+
   const handleSearchSelect = (region: CloudRegion) => {
     setSettings((current) => ({
       ...current,

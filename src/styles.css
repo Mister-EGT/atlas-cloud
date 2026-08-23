@@ -254,9 +254,10 @@ button {
   align-items: flex-start;
 }
 
-.provider-stack {
+.selected-region > .provider-stack {
   display: flex;
-  min-width: 58px;
+  min-width: 76px;
+  flex-direction: row;
   padding-top: 2px;
 }
 
@@ -708,6 +709,10 @@ button {
   background: #fff;
   box-shadow: var(--shadow-floating);
   pointer-events: none;
+}
+
+.flat-map__tooltip.is-below {
+  transform: translate(-50%, 15px);
 }
 
 .flat-map__tooltip > span {

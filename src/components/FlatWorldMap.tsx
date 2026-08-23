@@ -1,6 +1,6 @@
 import { geoNaturalEarth1, geoPath } from "d3-geo";
 import { LocateFixed, Minus, Plus } from "lucide-react";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { PROVIDERS, type CloudRegion } from "../data/regions";
 import {
   getMarkerAriaLabel,
@@ -26,8 +26,14 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
   clusterMarkers: boolean;
   onSelect: (regions: CloudRegion[]) => void;
 }) {
+  const mapRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
-  const [hovered, setHovered] = useState<GlobeMarker | null>(null);
+  const [hovered, setHovered] = useState<{
+    marker: GlobeMarker;
+    left: number;
+    top: number;
+    placement: "above" | "below";
+  } | null>(null);
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
   const projection = useMemo(
     () => geoNaturalEarth1().fitExtent([[28, 32], [MAP_WIDTH - 28, MAP_HEIGHT - 32]], countryFeatureCollection as never),
@@ -42,14 +48,27 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
     marker,
     point: projection([marker.lng, marker.lat]),
   })), [markers, projection]);
-  const projectedHovered = hovered ? projection([hovered.lng, hovered.lat]) : null;
+
+  const showTooltip = (marker: GlobeMarker, element: SVGGElement) => {
+    const mapRect = mapRef.current?.getBoundingClientRect();
+    if (!mapRect) return;
+    const markerRect = element.getBoundingClientRect();
+    const markerCenter = markerRect.left - mapRect.left + markerRect.width / 2;
+    const markerTop = markerRect.top - mapRect.top;
+    setHovered({
+      marker,
+      left: Math.min(mapRect.width - 132, Math.max(132, markerCenter)),
+      top: markerTop,
+      placement: markerTop < 150 ? "below" : "above",
+    });
+  };
 
   const adjustZoom = (direction: "in" | "out") => {
     setZoom((current) => Math.min(2.2, Math.max(1, current + (direction === "in" ? 0.25 : -0.25))));
   };
 
   return (
-    <div className="flat-map" data-render-mode="2d">
+    <div className="flat-map" data-render-mode="2d" ref={mapRef}>
       <div className="flat-map__badge" role="status">2D-Kompatibilitätsansicht</div>
       <svg className="flat-map__svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Regionen">
         <defs>
@@ -81,9 +100,9 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                 tabIndex={0}
                 aria-label={getMarkerAriaLabel(marker)}
                 transform={`translate(${point[0]} ${point[1]})`}
-                onMouseEnter={() => setHovered(marker)}
+                onMouseEnter={(event) => showTooltip(marker, event.currentTarget)}
                 onMouseLeave={() => setHovered(null)}
-                onFocus={() => setHovered(marker)}
+                onFocus={(event) => showTooltip(marker, event.currentTarget)}
                 onBlur={() => setHovered(null)}
                 onClick={() => onSelect(marker.regions)}
                 onKeyDown={(event) => {
@@ -116,10 +135,10 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
           })}
         </g>
       </svg>
-      {hovered && projectedHovered ? (
-        <div className="flat-map__tooltip" style={{ left: `${(projectedHovered[0] / MAP_WIDTH) * 100}%`, top: `${(projectedHovered[1] / MAP_HEIGHT) * 100}%` }}>
+      {hovered ? (
+        <div className={`flat-map__tooltip is-${hovered.placement}`} style={{ left: hovered.left, top: hovered.top }}>
           <div className="marker-tooltip__providers">
-            {getMarkerProviderStates(hovered).map((providerState) => (
+            {getMarkerProviderStates(hovered.marker).map((providerState) => (
               <small key={providerState.provider}>
                 <i
                   className={providerState.status === "planned" ? "is-planned" : ""}
@@ -130,16 +149,16 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
               </small>
             ))}
           </div>
-          <strong>{hovered.regions.length === 1 ? hovered.regions[0].name : `${hovered.regions.length} Regionen bei ${getMarkerLocation(hovered)}`}</strong>
+          <strong>{hovered.marker.regions.length === 1 ? hovered.marker.regions[0].name : `${hovered.marker.regions.length} Regionen bei ${getMarkerLocation(hovered.marker)}`}</strong>
           <div className="marker-tooltip__regions">
-            {hovered.regions.map((region) => (
+            {hovered.marker.regions.map((region) => (
               <span key={region.id}>
                 <code>{region.code ?? "Code folgt"}</code>
                 <em>{region.name}</em>
               </span>
             ))}
           </div>
-          <span>{hovered.regions.length > 1 ? "Klicken, um alle Details zu öffnen" : hovered.regions[0].country}</span>
+          <span>{hovered.marker.regions.length > 1 ? "Klicken, um alle Details zu öffnen" : hovered.marker.regions[0].country}</span>
         </div>
       ) : null}
       <div className="globe-controls" aria-label="Kartensteuerung">
