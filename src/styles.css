@@ -251,13 +251,12 @@ button {
 }
 
 .provider-mark {
-  display: inline-grid;
+  display: inline-flex;
   width: 40px;
   height: 40px;
   flex: 0 0 auto;
-  place-items: center;
-  overflow: visible;
-  font-weight: 500;
+  align-items: center;
+  justify-content: center;
 }
 
 .provider-mark.is-compact {
@@ -265,57 +264,28 @@ button {
   height: 26px;
 }
 
-.provider-mark--azure {
-  color: #087bd4;
-  font-size: 30px;
-  font-weight: 500;
-  letter-spacing: -0.15em;
-  transform: skew(-6deg);
+.provider-mark img {
+  display: block;
+  width: 31px;
+  max-height: 31px;
+  object-fit: contain;
 }
 
-.provider-mark--azure.is-compact {
-  font-size: 20px;
+.provider-mark.is-compact img {
+  width: 21px;
+  max-height: 21px;
 }
 
-.provider-mark--aws {
-  position: relative;
-  color: #232f3e;
-  font-family: Arial, sans-serif;
-  font-size: 15px;
-  letter-spacing: -0.06em;
+.provider-mark--aws img {
+  width: 37px;
 }
 
-.provider-mark--aws i {
-  position: absolute;
-  right: 3px;
-  bottom: 7px;
-  left: 4px;
-  height: 4px;
-  border-bottom: 2px solid #ff9900;
-  border-radius: 50%;
-  transform: rotate(4deg);
+.provider-mark--aws.is-compact img {
+  width: 25px;
 }
 
-.provider-mark--aws.is-compact {
-  font-size: 12px;
-}
-
-.provider-mark--aws.is-compact i {
-  right: 2px;
-  bottom: 3px;
-  left: 2px;
-}
-
-.provider-mark--gcp {
-  background: conic-gradient(from -36deg, #4285f4 0 25%, #34a853 0 45%, #fbbc05 0 65%, #ea4335 0 82%, #4285f4 0);
-  background-clip: text;
-  color: transparent;
-  font-family: Arial, sans-serif;
-  font-size: 29px;
-}
-
-.provider-mark--gcp.is-compact {
-  font-size: 19px;
+.provider-mark--gcp img {
+  width: 33px;
 }
 
 .status-line {
@@ -478,6 +448,111 @@ button {
 .globe-stage__canvas {
   position: absolute;
   inset: 0;
+}
+
+.globe-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.flat-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.flat-map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flat-map__content {
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.flat-map__content > path {
+  fill: #2b3b4a;
+  stroke: rgb(255 255 255 / 19%);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.flat-map__marker {
+  cursor: pointer;
+  outline: none;
+}
+
+.flat-map__marker > circle:last-child {
+  stroke: #fff;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+  transition: r 0.14s ease-out;
+}
+
+.flat-map__marker:hover > circle:last-child,
+.flat-map__marker:focus-visible > circle:last-child {
+  r: 8;
+}
+
+.flat-map__selection {
+  fill: rgb(48 93 222 / 12%);
+  stroke: #86a2ff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.flat-map__badge {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: var(--shadow-resting);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+.flat-map__tooltip {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  min-width: 172px;
+  transform: translate(-50%, calc(-100% - 12px));
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow-floating);
+  pointer-events: none;
+}
+
+.flat-map__tooltip small,
+.flat-map__tooltip > span {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+
+.flat-map__tooltip strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.flat-map__tooltip code {
+  font-family: "Geist Mono Variable", ui-monospace, monospace;
+  font-size: 10px;
 }
 
 .globe-stage__canvas canvas {

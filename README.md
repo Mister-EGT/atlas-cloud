@@ -11,6 +11,8 @@ Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung der veröffentlic
 - Suche nach Region, Standort, Land oder Regionscode
 - Filter nach Anbieter, Status und Kontinent
 - Gruppierbare Marker, automatische Rotation und Atmosphäre
+- Automatische 2D-Kompatibilitätsansicht, wenn WebGL nicht verfügbar ist
+- Originalgetreue Anbieterlogos für Azure, AWS und Google Cloud
 - Detailansicht mit Regionscode, Zonen, gekoppelter Region, Koordinaten und offizieller Quelle
 - Responsive Oberfläche für Desktop, Tablet und Mobilgeräte
 - Vollständig lokaler Betrieb ohne API-Schlüssel oder externes Backend
@@ -50,10 +52,11 @@ Vite zeigt anschließend die lokale URL im Terminal an.
 ```bash
 npm test
 npm run build
-npm run qa:visual
 ```
 
-Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen und die veröffentlichte AWS-Zonensumme. Die visuelle QA startet die App lokal in einem Headless-Browser und prüft Desktop, Mobile, Suche, Filter, Marker-Hover, Marker-Auswahl, Zoom sowie horizontalen Überlauf.
+Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen und die veröffentlichte AWS-Zonensumme.
+
+Der 3D-Globus wird als eigener JavaScript-Chunk erst bei WebGL-Unterstützung geladen. Dadurch bleibt die erste Übertragung klein und Browser ohne WebGL laden ausschließlich die 2D-Kompatibilitätsansicht.
 
 ## Technologie
 
@@ -61,7 +64,7 @@ Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten,
 - Vite
 - Three.js und react-globe.gl
 - World Atlas und TopoJSON
-- Vitest und Playwright
+- Vitest
 
 ## Lizenz
 
