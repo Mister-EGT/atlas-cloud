@@ -945,6 +945,11 @@ button {
   transform: translateX(14px);
 }
 
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 .settings-group {
   margin-top: 16px;
 }
@@ -1036,6 +1041,12 @@ button {
 
 .switch-list > div > span {
   font-size: 11px;
+}
+
+.switch-list > div > span small {
+  margin-left: 4px;
+  color: var(--muted-foreground);
+  font-size: 9px;
 }
 
 .summary-box {

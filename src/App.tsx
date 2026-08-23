@@ -25,6 +25,7 @@ export function filterRegions(regions: CloudRegion[], settings: ViewSettings) {
 
 export function App() {
   const [settings, setSettings] = useState(initialSettings);
+  const [renderMode, setRenderMode] = useState<"3d" | "2d">("3d");
   const [selected, setSelected] = useState<CloudRegion | null>(
     CLOUD_REGIONS.find((region) => region.code === "germanywestcentral") ?? CLOUD_REGIONS[0],
   );
@@ -76,12 +77,14 @@ export function App() {
           autoRotate={settings.autoRotate}
           atmosphere={settings.atmosphere}
           onSelect={handleSelect}
+          onRenderModeChange={setRenderMode}
         />
         <SettingsPanel
           settings={settings}
           onChange={setSettings}
           onSelect={handleSelect}
           visibleRegions={visibleRegions}
+          renderMode={renderMode}
         />
       </main>
       <div className="sr-only" role="status" aria-live="polite">

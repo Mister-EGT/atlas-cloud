@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useMemo, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, type ErrorInfo, type ReactNode } from "react";
 import { PROVIDERS, type ProviderId } from "../data/regions";
 import type { WebGLGlobeProps } from "./WebGLGlobe";
 
@@ -23,6 +23,7 @@ function supportsWebGL() {
 class WebGLErrorBoundary extends Component<{
   children: ReactNode;
   fallback: ReactNode;
+  onFallback?: () => void;
 }, { failed: boolean }> {
   state = { failed: false };
 
@@ -32,6 +33,7 @@ class WebGLErrorBoundary extends Component<{
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.warn("3D globe unavailable, using the 2D compatibility view.", error.message, info.componentStack);
+    this.props.onFallback?.();
   }
 
   render() {
@@ -39,7 +41,7 @@ class WebGLErrorBoundary extends Component<{
   }
 }
 
-export function GlobeCanvas(props: WebGLGlobeProps) {
+export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mode: "3d" | "2d") => void }) {
   const fallback = (
     <Suspense fallback={<div className="globe-loading" role="status">Kartenansicht wird geladen</div>}>
       <FlatWorldMap
@@ -52,10 +54,14 @@ export function GlobeCanvas(props: WebGLGlobeProps) {
   );
   const webglAvailable = useMemo(supportsWebGL, []);
 
+  useEffect(() => {
+    props.onRenderModeChange?.(webglAvailable ? "3d" : "2d");
+  }, [props.onRenderModeChange, webglAvailable]);
+
   return (
     <section className="globe-stage" aria-label="Interaktive Weltkarte der Cloud-Regionen">
       {webglAvailable ? (
-        <WebGLErrorBoundary fallback={fallback}>
+        <WebGLErrorBoundary fallback={fallback} onFallback={() => props.onRenderModeChange?.("2d")}>
           <Suspense fallback={<div className="globe-loading" role="status">3D-Globus wird geladen</div>}>
             <WebGLGlobe {...props} />
           </Suspense>
