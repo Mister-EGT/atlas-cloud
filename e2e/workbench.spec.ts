@@ -14,6 +14,12 @@ test("search, filters, shortlist and deep-link restore", async ({ page }) => {
 
   await page.getByRole("button", { name: "Tabelle" }).click();
   await expect(page.getByRole("heading", { name: "Standorttabelle" })).toBeVisible();
+  const csvDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "CSV", exact: true }).click();
+  expect((await csvDownload).suggestedFilename()).toBe("atlas-cloud-standorte.csv");
+  const jsonDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "JSON", exact: true }).click();
+  expect((await jsonDownload).suggestedFilename()).toBe("atlas-cloud-standorte.json");
   const compareButtons = page.getByRole("button", { name: /zum Vergleich hinzufügen/ });
   for (let index = 0; index < 4; index += 1) await compareButtons.nth(0).click();
   await page.locator("header nav").getByRole("button", { name: /^Vergleich/ }).click();
