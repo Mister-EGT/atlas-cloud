@@ -1,75 +1,56 @@
 # Atlas Cloud
 
-Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung der veröffentlichten Cloud-Regionen von Microsoft Azure, Amazon Web Services und Google Cloud sowie der Edge-Rechenzentren von Cloudflare. Im Zentrum steht ein frei dreh- und zoombarer 3D-Globus. Marker zeigen Details beim Überfahren und laden beim Anklicken die vollständige Standortansicht.
+Atlas Cloud ist eine statische, offline-fähige Cloud-Architect Workbench. Sie trennt 152 Cloud-Regionen von 341 Cloudflare-Edge-Standorten und stellt Karte, Datentabelle, Shortlist-Vergleich und einen transparenten Entscheidungsassistenten bereit.
 
-## Funktionsumfang
+## Funktionen
 
-- 493 recherchierte Einträge, davon 491 aktive und 2 angekündigte Standorte
-- Azure: 68 Einträge aus Public Cloud, China, Government und DoD
-- AWS: 41 Einträge, davon 39 aktiv und 2 angekündigt
-- Google Cloud: 43 aktive Regionen
-- Cloudflare: 341 einzeln im offiziellen Statussystem geführte Edge-Rechenzentren
-- Suche nach Region, Standort, Land oder Regionscode
-- Filter nach Anbieter, Status und Kontinent
-- Gruppierbare Marker, automatische Rotation und Atmosphäre
-- Automatische 2D-Kompatibilitätsansicht, wenn WebGL nicht verfügbar ist
-- Originalgetreue Anbieterlogos für Azure, AWS, Google Cloud und Cloudflare
-- Detailansicht mit Standortart, Cloud-Umgebung, Regions- oder Colo-Code, Zonen, Zugriff, Netzwerkregion, Koordinatengenauigkeit und offizieller Quelle
-- Responsive Oberfläche für Desktop, Tablet und Mobilgeräte
-- Vollständig lokaler Betrieb ohne API-Schlüssel oder externes Backend
+- Layer, Anbieter, Lifecycle, Kontinent, Dienste und Architektur-Presets als kombinierbare Filter
+- tastaturbedienbare Token-Suche nach Region, Code, Anbieter, Land und Dienst
+- sortierbare Tabelle mit Spaltenauswahl sowie CSV-/JSON-Export
+- Shortlist für bis zu vier Regionen mit Quellen, Datenalter, Proximity und Datenlücken
+- Assistent mit harten Anforderungen und anpassbarer Gewichtung: Services 35 %, Nähe 25 %, Resilienz 20 %, Preis 10 %, Nachhaltigkeit 10 %
+- kanonische Deep Links für Ansicht, Filter, Auswahl, Vergleich, Ursprung und Kartenmodus
+- lazy geladener 3D-Globus, barrierefreie 2D-Fallback-Karte und markerabhängiges Level of Detail
+- installierbare PWA mit offline verfügbarem App-Shell und Update-Hinweis
 
-## Datenabdeckung
+Proximity bezeichnet ausschließlich die Luftlinienentfernung zu einer gewählten Ursprungsregion. Atlas Cloud behauptet ohne Messinfrastruktur keine Netzwerklatenz. Fehlende Preis- und Nachhaltigkeitsdaten werden sichtbar als nicht verfügbar behandelt und nie geschätzt.
 
-Cloud-Anbieter veröffentlichen in der Regel Regionen und Metropolstandorte, aber aus Sicherheitsgründen keine vollständigen Listen einzelner Gebäudeadressen. Atlas Cloud visualisiert deshalb die offiziellen Cloud-Regionen sowie die im Cloudflare-Statussystem einzeln geführten Edge-Rechenzentren. Die Marker verwenden Stadt-, Flughafen-, Bundesstaats- oder Metropolmittelpunkte und sind nicht als exakte Gebäudeadresse zu verstehen.
+## Daten und Referenzpreis
 
-Cloudflare nennt auf seiner Netzwerkseite 348 Städte. Das öffentliche Statussystem weist davon aktuell 341 Standorte mit eindeutigem dreistelligem Colo-Code und Kontinentzuordnung einzeln aus. Nur diese einzeln belegbaren Standorte werden als Pins dargestellt. Cloudflare-Standorte sind Edge-Rechenzentren im globalen Anycast-Netzwerk und keine klassischen Public-Cloud-Regionen.
+Die geprüften JSON-Snapshots liegen unter `src/data/generated`. Jedes Standortobjekt enthält Lifecycle, getrennten Betriebsstatus, Koordinatengenauigkeit, Services und Provenienz. Cloudflare-Standorte sind Edge-Rechenzentren und keine Public-Cloud-Regionen.
 
-Souveräne und eingeschränkte Partitionen werden als eigene Einträge geführt. Dazu gehören Azure China, Azure Government, Azure DoD und die AWS European Sovereign Cloud. Die zwei angekündigten AWS Regionen in Saudi-Arabien und Chile sind als geplant markiert.
+Die Preisbaseline ist ein Linux-On-Demand-Workload mit 2 vCPU und 8 GB RAM in USD pro Stunde: AWS `m7i.large`, Azure `Standard_D2s_v5`, GCP `n2-standard-2`. Rabatte, Steuern, Storage und Egress sind ausgeschlossen; Cloudflare ist nicht vergleichbar. Ein Preis wird nur angezeigt, wenn eine offizielle öffentliche Quelle belegt ist. Das Gleiche gilt für Nachhaltigkeitsmetriken.
 
-Datenstand: 24. August 2026.
+Offizielle Quellen umfassen [Azure Regions](https://learn.microsoft.com/azure/reliability/regions-list), [Azure Retail Prices](https://learn.microsoft.com/rest/api/cost-management/retail-prices/azure-retail-prices), [AWS Regions](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/), [Google Cloud Locations](https://cloud.google.com/about/locations) und die [Cloudflare Status API](https://www.cloudflarestatus.com/api).
 
-## Offizielle Quellen
+## Entwicklung und Qualität
 
-- [Azure Public Regions](https://learn.microsoft.com/azure/reliability/regions-list)
-- [Azure China Regions](https://learn.microsoft.com/azure/china/overview-regions)
-- [Azure Government](https://learn.microsoft.com/azure/azure-government/documentation-government-welcome)
-- [Azure Government DoD](https://learn.microsoft.com/azure/azure-government/documentation-government-overview-dod)
-- [AWS Regions and Availability Zones](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/)
-- [AWS Region Codes](https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html)
-- [AWS European Sovereign Cloud](https://aws.amazon.com/blogs/aws/opening-the-aws-european-sovereign-cloud/)
-- [Google Cloud Locations](https://cloud.google.com/about/locations)
-- [Cloudflare Global Network](https://www.cloudflare.com/network/)
-- [Cloudflare System Status](https://www.cloudflarestatus.com/)
-
-## Lokal starten
-
-Voraussetzung ist Node.js 20 oder neuer.
+Node.js 24.x ist erforderlich. Installation und lokale Entwicklung:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Vite zeigt anschließend die lokale URL im Terminal an.
-
-## Qualität prüfen
+Der vollständige lokale Gate führt Lint, Typecheck, Unit-Tests, Datenvalidierung, Produktionsbuild und Größenprüfung aus:
 
 ```bash
-npm test
-npm run build
+npm run verify
+npx playwright install chromium
+npm run test:e2e
 ```
 
-Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen, die veröffentlichte AWS-Zonensumme sowie Standortart und Colo-Codes der Cloudflare-Rechenzentren.
+Weitere Datenbefehle:
 
-Der 3D-Globus wird als eigener JavaScript-Chunk erst bei WebGL-Unterstützung geladen. Dadurch bleibt die erste Übertragung klein und Browser ohne WebGL laden ausschließlich die 2D-Kompatibilitätsansicht.
+```bash
+npm run data:validate
+npm run data:check
+npm run data:refresh
+```
 
-## Technologie
+`data:refresh` lädt offizielle öffentliche Quellen zunächst in ein Staging-Verzeichnis. Nur wenn alle Abrufe und Validierungen erfolgreich sind, werden Rohdaten und Metadaten veröffentlicht. Der wöchentliche GitHub-Workflow öffnet bei gültigen Änderungen eine eigene Daten-PR; Parser- oder Netzwerkfehler verändern keine Snapshots.
 
-- React 19 und TypeScript
-- Vite
-- Three.js und react-globe.gl
-- World Atlas und TopoJSON
-- Vitest
+Die CI verwendet `npm ci`, prüft Produktionsabhängigkeiten, führt responsive Playwright- und axe-Tests aus und erzwingt maximal 125 KB gzip eager JavaScript sowie maximal 531 KB gzip für den lazy WebGL-Einstieg.
 
 ## Lizenz
 

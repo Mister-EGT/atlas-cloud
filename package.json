@@ -4,11 +4,22 @@
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/inject-sw-manifest.mjs",
     "preview": "vite preview",
-    "test": "vitest run"
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "data:refresh": "node scripts/data-refresh.mjs",
+    "data:validate": "node scripts/data-validate.mjs",
+    "data:check": "node scripts/data-check.mjs",
+    "check:performance": "node scripts/check-performance.mjs",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run data:validate && npm run build && npm run check:performance"
   },
   "dependencies": {
     "@fontsource-variable/geist-mono": "^5.2.6",
@@ -24,6 +35,8 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.55.0",
     "@types/d3-geo": "^3.1.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
