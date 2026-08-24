@@ -10,6 +10,7 @@ import {
   groupRegions,
   type GlobeMarker,
 } from "./globeMarkers";
+import { getSelectionPointOfView } from "./globeView";
 import { countryFeatures } from "./worldMapData";
 
 export interface WebGLGlobeProps {
@@ -24,6 +25,7 @@ export interface WebGLGlobeProps {
 export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotate, atmosphere, onSelect }: WebGLGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  const hasAppliedInitialViewRef = useRef(false);
   const [size, setSize] = useState({ width: 700, height: 700 });
   const primarySelected = selectedRegions[0];
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
@@ -145,7 +147,9 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
   useEffect(() => {
     if (!primarySelected || !globeRef.current) return;
-    globeRef.current.pointOfView({ lat: primarySelected.lat, lng: primarySelected.lng, altitude: 1.85 }, 650);
+    const preserveZoom = hasAppliedInitialViewRef.current;
+    hasAppliedInitialViewRef.current = true;
+    globeRef.current.pointOfView(getSelectionPointOfView(primarySelected, preserveZoom), 650);
   }, [primarySelected?.id]);
 
   const adjustZoom = (direction: "in" | "out") => {

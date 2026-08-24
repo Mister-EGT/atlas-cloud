@@ -942,8 +942,9 @@ button {
 }
 
 .globe-html-marker:hover,
+.globe-html-marker.is-hovered,
 .globe-html-marker:focus-visible {
-  z-index: 8;
+  z-index: 2147483647 !important;
   outline: 0;
 }
 
