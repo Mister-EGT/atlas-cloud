@@ -1,6 +1,7 @@
 import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
 
-const PROVIDER_ORDER: ProviderId[] = ["azure", "aws", "gcp"];
+const PROVIDER_ORDER: ProviderId[] = ["azure", "aws", "gcp", "cloudflare"];
+const CLUSTER_DISTANCE_KM = 45;
 
 export interface MarkerProviderState {
   provider: ProviderId;
@@ -58,19 +59,31 @@ export function getMarkerAriaLabel(marker: GlobeMarker) {
     return `${region.name}, ${region.location} auswählen`;
   }
   const providerNames = marker.providers.map((provider) => PROVIDERS[provider].shortName).join(", ");
-  return `${marker.regions.length} Regionen bei ${getMarkerLocation(marker)} von ${providerNames} auswählen`;
+  return `${marker.regions.length} Standorte bei ${getMarkerLocation(marker)} von ${providerNames} auswählen`;
+}
+
+function distanceInKilometres(left: CloudRegion, right: CloudRegion) {
+  const toRadians = (value: number) => value * Math.PI / 180;
+  const latitudeDelta = toRadians(right.lat - left.lat);
+  const longitudeDelta = toRadians(right.lng - left.lng);
+  const a = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(toRadians(left.lat)) * Math.cos(toRadians(right.lat)) * Math.sin(longitudeDelta / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 export function groupRegions(regions: CloudRegion[], shouldGroup: boolean): GlobeMarker[] {
-  const groups = new Map<string, CloudRegion[]>();
+  const groups: CloudRegion[][] = [];
   regions.forEach((region) => {
-    const key = shouldGroup
-      ? `${Math.round(region.lat * 2) / 2}:${Math.round(region.lng * 2) / 2}`
-      : region.id;
-    groups.set(key, [...(groups.get(key) ?? []), region]);
+    if (!shouldGroup) {
+      groups.push([region]);
+      return;
+    }
+    const nearbyGroup = groups.find((group) => distanceInKilometres(group[0], region) <= CLUSTER_DISTANCE_KM);
+    if (nearbyGroup) nearbyGroup.push(region);
+    else groups.push([region]);
   });
 
-  return [...groups.values()].map((unsortedGroup) => {
+  return groups.map((unsortedGroup) => {
     const group = sortRegions(unsortedGroup);
     return {
       lat: group.reduce((sum, region) => sum + region.lat, 0) / group.length,

@@ -3,6 +3,16 @@ import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
 import { Panel } from "./Panel";
 import { ProviderMark } from "./ProviderMark";
 
+const NETWORK_REGION_LABELS: Record<string, string> = {
+  Africa: "Afrika",
+  Asia: "Asien",
+  Europe: "Europa",
+  "Latin America & the Caribbean": "Lateinamerika und Karibik",
+  "Middle East": "Naher Osten",
+  "North America": "Nordamerika",
+  Oceania: "Ozeanien",
+};
+
 function DetailRow({ label, children, mono = false }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
     <div className="detail-row">
@@ -14,7 +24,9 @@ function DetailRow({ label, children, mono = false }: { label: string; children:
 
 function SingleRegionDetails({ region }: { region: CloudRegion }) {
   const provider = PROVIDERS[region.provider];
-  const availability = region.zones
+  const availability = region.locationType === "edge-location"
+    ? "Nicht anwendbar"
+    : region.zones
     ? `${region.zones} Zonen`
     : region.availabilityZones
       ? "Unterstützt"
@@ -38,14 +50,26 @@ function SingleRegionDetails({ region }: { region: CloudRegion }) {
 
       <dl className="detail-list">
         <DetailRow label="Anbieter">{provider.name}</DetailRow>
-        {region.scope === "sovereign" ? <DetailRow label="Cloud-Umgebung">Sovereign Cloud</DetailRow> : null}
+        <DetailRow label="Standortart">{region.locationType === "edge-location" ? "Edge-Rechenzentrum" : "Cloud-Region"}</DetailRow>
+        <DetailRow label="Cloud-Umgebung">
+          {region.scope === "sovereign" ? "Sovereign Cloud" : region.provider === "cloudflare" ? "Globales Anycast-Netzwerk" : "Public Cloud"}
+        </DetailRow>
+        {region.networkRegion ? <DetailRow label="Netzwerkregion">{NETWORK_REGION_LABELS[region.networkRegion] ?? region.networkRegion}</DetailRow> : null}
         <DetailRow label="Standort">{region.location}</DetailRow>
         <DetailRow label="Land">{region.country}</DetailRow>
-        <DetailRow label="Regionscode" mono>{region.code ?? "Noch nicht veröffentlicht"}</DetailRow>
+        <DetailRow label="Standortcode" mono>{region.code ?? "Noch nicht veröffentlicht"}</DetailRow>
         <DetailRow label="Verfügbarkeitszonen">{availability}</DetailRow>
+        <DetailRow label="Zugriff">{region.restricted ? "Eingeschränkt" : "Allgemein verfügbar"}</DetailRow>
         {region.pairedRegion ? <DetailRow label="Gepaarte Region">{region.pairedRegion}</DetailRow> : null}
+        {region.provider === "cloudflare" ? <DetailRow label="Leistungsumfang">Vollständiger Cloudflare-Service-Stack</DetailRow> : null}
+        {region.trackedSince ? (
+          <DetailRow label="Statussystem seit">
+            {new Date(`${region.trackedSince}T00:00:00Z`).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" })}
+          </DetailRow>
+        ) : null}
         <DetailRow label="Breitengrad" mono>{region.lat.toFixed(4)}°</DetailRow>
         <DetailRow label="Längengrad" mono>{region.lng.toFixed(4)}°</DetailRow>
+        <DetailRow label="Pin-Genauigkeit">Stadt- oder Flughafenmittelpunkt</DetailRow>
       </dl>
 
       <a className="source-link" href={region.source} target="_blank" rel="noreferrer">
@@ -60,7 +84,7 @@ function SingleRegionDetails({ region }: { region: CloudRegion }) {
 }
 
 function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
-  const providerIds = (["azure", "aws", "gcp"] as ProviderId[]).filter((provider) =>
+  const providerIds = (["azure", "aws", "gcp", "cloudflare"] as ProviderId[]).filter((provider) =>
     regions.some((region) => region.provider === provider),
   );
   const locations = [...new Set(regions.map((region) => region.location))];
@@ -77,7 +101,7 @@ function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
         </div>
         <div>
           <strong>{location}</strong>
-          <span>{regions.length} Regionen von {providerIds.length} {providerIds.length === 1 ? "Anbieter" : "Anbietern"}</span>
+          <span>{regions.length} Standorte von {providerIds.length} {providerIds.length === 1 ? "Anbieter" : "Anbietern"}</span>
         </div>
       </div>
 
@@ -87,7 +111,7 @@ function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
       </div>
 
       <div className="grouped-region-list" aria-label="Anbieter und Regionen an diesem Standort">
-        <h3>Anbieter und Regionen</h3>
+        <h3>Anbieter und Standorte</h3>
         {regions.map((region) => (
           <article className={`grouped-region-card is-${region.status}`} key={region.id}>
             <ProviderMark provider={region.provider} compact />
@@ -119,7 +143,7 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
         <div className="empty-state">
           <LocateFixed aria-hidden="true" />
           <strong>Kein Standort sichtbar</strong>
-          <span>Ändere die Filter, um wieder Cloud-Regionen anzuzeigen.</span>
+          <span>Ändere die Filter, um wieder Cloud-Standorte anzuzeigen.</span>
         </div>
       </Panel>
     );
@@ -130,7 +154,7 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
       {regions.length === 1 ? <SingleRegionDetails region={regions[0]} /> : <GroupedRegionDetails regions={regions} />}
 
       <p className="source-note">
-        Regionen sind veröffentlichte Metropolstandorte. Die Anbieter nennen aus Sicherheitsgründen meist keine Gebäudeadressen.
+        Gezeigt werden veröffentlichte Cloud-Regionen und Cloudflare-Edge-Standorte. Pins markieren Stadt- oder Flughafenmittelpunkte, keine Gebäudeadressen.
       </p>
     </Panel>
   );

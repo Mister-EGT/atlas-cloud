@@ -6,7 +6,7 @@ import { SettingsPanel, type ViewSettings } from "./components/SettingsPanel";
 import { CLOUD_REGIONS, type CloudRegion } from "./data/regions";
 
 const initialSettings: ViewSettings = {
-  providers: { azure: true, aws: true, gcp: true },
+  providers: { azure: true, aws: true, gcp: true, cloudflare: true },
   status: "all",
   continent: "all",
   clusterMarkers: true,
@@ -70,7 +70,7 @@ export function App() {
         </nav>
         <div className="data-date">
           <span />
-          Stand 23. August 2026
+          Stand 24. August 2026
         </div>
       </header>
 
@@ -95,7 +95,7 @@ export function App() {
       </main>
       <div className="sr-only" role="status" aria-live="polite">
         {selectedRegions.length > 1
-          ? `${selectedRegions.length} Regionen bei ${selectedRegions[0].location} ausgewählt`
+          ? `${selectedRegions.length} Standorte bei ${selectedRegions[0].location} ausgewählt`
           : selectedRegions[0]
             ? `${selectedRegions[0].name}, ${selectedRegions[0].location} ausgewählt`
             : "Keine Region ausgewählt"}

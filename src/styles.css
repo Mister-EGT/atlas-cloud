@@ -256,7 +256,7 @@ button {
 
 .selected-region > .provider-stack {
   display: flex;
-  min-width: 76px;
+  min-width: 99px;
   flex-direction: row;
   padding-top: 2px;
 }
@@ -317,6 +317,14 @@ button {
 
 .provider-mark--gcp img {
   width: 33px;
+}
+
+.provider-mark--cloudflare img {
+  width: 34px;
+}
+
+.provider-mark--cloudflare.is-compact img {
+  width: 22px;
 }
 
 .status-line {
@@ -911,8 +919,8 @@ button {
   position: relative;
   display: flex;
   width: auto;
-  min-width: 11px;
-  height: 13px;
+  min-width: 10px;
+  height: 12px;
   align-items: center;
   gap: 2px;
   padding: 0;
@@ -926,8 +934,8 @@ button {
 
 .globe-html-marker__dot {
   display: block;
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   flex: 0 0 auto;
   border: 2px solid #fff;
   border-radius: 50%;

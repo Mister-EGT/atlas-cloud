@@ -16,8 +16,9 @@ const MAP_HEIGHT = 560;
 
 const PROVIDER_DOT_POSITIONS = {
   1: [[0, 0]],
-  2: [[-3.7, 0], [3.7, 0]],
-  3: [[-4.2, 1.7], [0, -3.2], [4.2, 1.7]],
+  2: [[-3.2, 0], [3.2, 0]],
+  3: [[-3.7, 1.5], [0, -2.8], [3.7, 1.5]],
+  4: [[-3, -3], [3, -3], [-3, 3], [3, 3]],
 } as const;
 
 export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelect }: {
@@ -72,7 +73,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
   return (
     <div className="flat-map" data-render-mode="2d" ref={mapRef}>
       <div className="flat-map__badge" role="status">2D-Kompatibilitätsansicht</div>
-      <svg className="flat-map__svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Regionen">
+      <svg className="flat-map__svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Standorte">
         <defs>
           <radialGradient id="flat-ocean" cx="50%" cy="42%" r="68%">
             <stop offset="0" stopColor="#18324a" />
@@ -89,7 +90,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
             if (!point) return null;
             const providerStates = getMarkerProviderStates(marker);
             const isSelected = selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id));
-            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3];
+            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4];
             const isCluster = marker.regions.length > 1;
             return (
               <g
@@ -114,8 +115,8 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                   }
                 }}
               >
-                {isSelected ? <circle className="flat-map__selection" r={isCluster ? 13 : 11} /> : null}
-                {isCluster ? <circle className="flat-map__cluster-shell" r="9" /> : null}
+                {isSelected ? <circle className="flat-map__selection" r={isCluster ? 12 : 10} /> : null}
+                {isCluster ? <circle className="flat-map__cluster-shell" r="8.25" /> : null}
                 {providerStates.map((providerState, index) => {
                   const [cx, cy] = dotPositions[index];
                   const color = PROVIDERS[providerState.provider].color;
@@ -125,7 +126,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                       className={`flat-map__provider-dot is-${providerState.status}`}
                       cx={cx}
                       cy={cy}
-                      r={isCluster ? 3.7 : 6}
+                      r={isCluster ? 3.25 : 5.25}
                       fill={providerState.status === "planned" ? "#fff" : color}
                       stroke={providerState.status === "planned" ? color : "#fff"}
                     />
@@ -151,7 +152,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
               </small>
             ))}
           </div>
-          <strong>{hovered.marker.regions.length === 1 ? hovered.marker.regions[0].name : `${hovered.marker.regions.length} Regionen bei ${getMarkerLocation(hovered.marker)}`}</strong>
+          <strong>{hovered.marker.regions.length === 1 ? hovered.marker.regions[0].name : `${hovered.marker.regions.length} Standorte bei ${getMarkerLocation(hovered.marker)}`}</strong>
           <div className="marker-tooltip__regions">
             {hovered.marker.regions.map((region) => (
               <span key={region.id}>

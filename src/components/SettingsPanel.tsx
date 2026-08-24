@@ -61,14 +61,14 @@ export function SettingsPanel({
     const normalized = query.trim().toLocaleLowerCase("de");
     if (!normalized) return [];
     return CLOUD_REGIONS.filter((region) =>
-      [region.name, region.code ?? "", region.location, region.country, PROVIDERS[region.provider].name]
+      [region.name, region.code ?? "", region.location, region.country, region.networkRegion ?? "", PROVIDERS[region.provider].name]
         .join(" ")
         .toLocaleLowerCase("de")
         .includes(normalized),
     ).slice(0, 7);
   }, [query]);
 
-  const providerIds: ProviderId[] = ["azure", "aws", "gcp"];
+  const providerIds: ProviderId[] = ["azure", "aws", "gcp", "cloudflare"];
 
   return (
     <Panel title="Ansicht" className="settings-panel">
@@ -111,7 +111,7 @@ export function SettingsPanel({
             <div className="provider-row" key={providerId}>
               <ProviderMark provider={providerId} compact />
               <span>{PROVIDERS[providerId].shortName}</span>
-              <small>{count} Regionen</small>
+              <small>{count} {providerId === "cloudflare" ? "Edge-Standorte" : "Regionen"}</small>
               <Toggle
                 label={`${PROVIDERS[providerId].shortName} anzeigen`}
                 checked={settings.providers[providerId]}
