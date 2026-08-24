@@ -11,11 +11,22 @@ describe("globe marker groups", () => {
     expect(marker).toBeDefined();
     expect(marker?.providers).toContain("aws");
     expect(marker?.providers).toContain("azure");
+    expect(marker?.providers).toContain("cloudflare");
     expect(marker?.status).toBe("mixed");
     expect(getMarkerProviderStates(marker!).find((state) => state.provider === "aws")?.status).toBe("planned");
     expect(getMarkerProviderStates(marker!).find((state) => state.provider === "azure")?.status).toBe("active");
     expect(getMarkerAriaLabel(marker!)).toContain("AWS");
     expect(getMarkerAriaLabel(marker!)).toContain("Azure");
+    expect(getMarkerAriaLabel(marker!)).toContain("Cloudflare");
+  });
+
+  it("groups nearby locations across a coordinate-grid boundary", () => {
+    const nearby = CLOUD_REGIONS.filter((region) => ["southamerica-west1", "SCL"].includes(region.code ?? ""));
+    const markers = groupRegions(nearby, true);
+
+    expect(nearby).toHaveLength(2);
+    expect(markers).toHaveLength(1);
+    expect(markers[0].providers).toEqual(["gcp", "cloudflare"]);
   });
 
   it("keeps regions separate when grouping is disabled", () => {

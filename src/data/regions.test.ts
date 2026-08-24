@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { AWS_REGIONS, AZURE_REGIONS, CLOUD_REGIONS, GCP_REGIONS } from "./regions";
+import { AWS_REGIONS, AZURE_REGIONS, CLOUDFLARE_REGIONS, CLOUD_REGIONS, GCP_REGIONS } from "./regions";
 
 describe("cloud region dataset", () => {
   it("contains every researched public-cloud region and announcement", () => {
     expect(AZURE_REGIONS).toHaveLength(68);
     expect(AWS_REGIONS).toHaveLength(41);
     expect(GCP_REGIONS).toHaveLength(43);
-    expect(CLOUD_REGIONS).toHaveLength(152);
+    expect(CLOUDFLARE_REGIONS).toHaveLength(341);
+    expect(CLOUD_REGIONS).toHaveLength(493);
   });
 
   it("uses unique ids and valid coordinates", () => {
@@ -29,5 +30,13 @@ describe("cloud region dataset", () => {
     expect(CLOUD_REGIONS.filter((region) => region.scope === "sovereign")).toHaveLength(16);
     expect(AWS_REGIONS.filter((region) => region.status === "active")).toHaveLength(39);
     expect(AWS_REGIONS.filter((region) => region.status === "active").reduce((sum, region) => sum + (region.zones ?? 0), 0)).toBe(123);
+  });
+
+  it("models Cloudflare locations as active edge data centers", () => {
+    expect(CLOUDFLARE_REGIONS.every((region) => region.locationType === "edge-location")).toBe(true);
+    expect(CLOUDFLARE_REGIONS.every((region) => region.status === "active")).toBe(true);
+    expect(CLOUDFLARE_REGIONS.every((region) => region.code?.length === 3)).toBe(true);
+    expect(CLOUDFLARE_REGIONS.every((region) => region.location.trim().length > 0)).toBe(true);
+    expect(new Set(CLOUDFLARE_REGIONS.map((region) => region.code)).size).toBe(CLOUDFLARE_REGIONS.length);
   });
 });

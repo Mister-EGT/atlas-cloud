@@ -71,7 +71,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     const nameElement = document.createElement("strong");
     nameElement.textContent = marker.regions.length === 1
       ? marker.regions[0].name
-      : `${marker.regions.length} Regionen bei ${getMarkerLocation(marker)}`;
+      : `${marker.regions.length} Standorte bei ${getMarkerLocation(marker)}`;
     const regionList = document.createElement("span");
     regionList.className = "globe-html-marker__regions";
     marker.regions.forEach((region) => {

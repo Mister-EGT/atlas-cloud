@@ -1,4 +1,6 @@
-export type ProviderId = "azure" | "aws" | "gcp";
+import { CLOUDFLARE_LOCATION_INPUTS } from "./cloudflareLocations";
+
+export type ProviderId = "azure" | "aws" | "gcp" | "cloudflare";
 export type Continent =
   | "Afrika"
   | "Asien"
@@ -23,6 +25,9 @@ export interface CloudRegion {
   status: "active" | "planned";
   scope: "standard" | "sovereign";
   restricted?: boolean;
+  locationType: "cloud-region" | "edge-location";
+  networkRegion?: string;
+  trackedSince?: string;
   source: string;
 }
 
@@ -42,6 +47,11 @@ export const PROVIDERS = {
     shortName: "Google Cloud",
     color: "#34a853",
   },
+  cloudflare: {
+    name: "Cloudflare",
+    shortName: "Cloudflare",
+    color: "#f6821f",
+  },
 } as const;
 
 const AZURE_SOURCE = "https://learn.microsoft.com/azure/reliability/regions-list";
@@ -52,12 +62,19 @@ const AWS_SOURCE = "https://docs.aws.amazon.com/global-infrastructure/latest/reg
 const AWS_INFRA_SOURCE = "https://aws.amazon.com/about-aws/global-infrastructure/regions_az/";
 const AWS_EU_SOVEREIGN_SOURCE = "https://aws.amazon.com/blogs/aws/opening-the-aws-european-sovereign-cloud/";
 const GCP_SOURCE = "https://cloud.google.com/about/locations";
+const CLOUDFLARE_SOURCE = "https://www.cloudflarestatus.com/";
 
-type RegionInput = Omit<CloudRegion, "id" | "provider" | "status" | "scope" | "source"> & {
+type RegionInput = Omit<CloudRegion, "id" | "provider" | "status" | "scope" | "source" | "locationType"> & {
   status?: CloudRegion["status"];
   scope?: CloudRegion["scope"];
+  locationType?: CloudRegion["locationType"];
   source?: string;
 };
+
+export type CloudflareLocationInput = Pick<
+  CloudRegion,
+  "name" | "code" | "location" | "country" | "continent" | "lat" | "lng" | "networkRegion" | "trackedSince"
+>;
 
 function makeRegion(provider: ProviderId, input: RegionInput): CloudRegion {
   const source =
@@ -71,6 +88,7 @@ function makeRegion(provider: ProviderId, input: RegionInput): CloudRegion {
     provider,
     status: input.status ?? "active",
     scope: input.scope ?? "standard",
+    locationType: input.locationType ?? (provider === "cloudflare" ? "edge-location" : "cloud-region"),
     source,
   };
 }
@@ -78,6 +96,13 @@ function makeRegion(provider: ProviderId, input: RegionInput): CloudRegion {
 const azure = (input: RegionInput) => makeRegion("azure", input);
 const aws = (input: RegionInput) => makeRegion("aws", input);
 const gcp = (input: RegionInput) => makeRegion("gcp", input);
+const cloudflare = (input: CloudflareLocationInput) => makeRegion("cloudflare", {
+  ...input,
+  name: `${input.name} Edge`,
+  availabilityZones: false,
+  locationType: "edge-location",
+  source: CLOUDFLARE_SOURCE,
+});
 
 export const AZURE_REGIONS: CloudRegion[] = [
   azure({ name: "Australia Central", code: "australiacentral", location: "Canberra", country: "Australien", continent: "Ozeanien", lat: -35.2809, lng: 149.13, pairedRegion: "Australia Central 2", restricted: true }),
@@ -240,10 +265,13 @@ export const GCP_REGIONS: CloudRegion[] = [
   gcp({ name: "Santiago", code: "southamerica-west1", location: "Santiago", country: "Chile", continent: "Südamerika", lat: -33.4489, lng: -70.6693, zones: 3 }),
 ];
 
+export const CLOUDFLARE_REGIONS: CloudRegion[] = CLOUDFLARE_LOCATION_INPUTS.map(cloudflare);
+
 export const CLOUD_REGIONS: CloudRegion[] = [
   ...AZURE_REGIONS,
   ...AWS_REGIONS,
   ...GCP_REGIONS,
+  ...CLOUDFLARE_REGIONS,
 ];
 
 export const CONTINENTS: Continent[] = [

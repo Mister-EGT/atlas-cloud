@@ -1,29 +1,32 @@
 # Atlas Cloud
 
-Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung der veröffentlichten Cloud-Regionen von Microsoft Azure, Amazon Web Services und Google Cloud. Im Zentrum steht ein frei dreh- und zoombarer 3D-Globus. Marker zeigen Details beim Überfahren und laden beim Anklicken die vollständige Regionsansicht.
+Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung der veröffentlichten Cloud-Regionen von Microsoft Azure, Amazon Web Services und Google Cloud sowie der Edge-Rechenzentren von Cloudflare. Im Zentrum steht ein frei dreh- und zoombarer 3D-Globus. Marker zeigen Details beim Überfahren und laden beim Anklicken die vollständige Standortansicht.
 
 ## Funktionsumfang
 
-- 152 recherchierte Einträge, davon 150 aktive und 2 angekündigte Regionen
+- 493 recherchierte Einträge, davon 491 aktive und 2 angekündigte Standorte
 - Azure: 68 Einträge aus Public Cloud, China, Government und DoD
 - AWS: 41 Einträge, davon 39 aktiv und 2 angekündigt
 - Google Cloud: 43 aktive Regionen
+- Cloudflare: 341 einzeln im offiziellen Statussystem geführte Edge-Rechenzentren
 - Suche nach Region, Standort, Land oder Regionscode
 - Filter nach Anbieter, Status und Kontinent
 - Gruppierbare Marker, automatische Rotation und Atmosphäre
 - Automatische 2D-Kompatibilitätsansicht, wenn WebGL nicht verfügbar ist
-- Originalgetreue Anbieterlogos für Azure, AWS und Google Cloud
-- Detailansicht mit Regionscode, Zonen, gekoppelter Region, Koordinaten und offizieller Quelle
+- Originalgetreue Anbieterlogos für Azure, AWS, Google Cloud und Cloudflare
+- Detailansicht mit Standortart, Cloud-Umgebung, Regions- oder Colo-Code, Zonen, Zugriff, Netzwerkregion, Koordinatengenauigkeit und offizieller Quelle
 - Responsive Oberfläche für Desktop, Tablet und Mobilgeräte
 - Vollständig lokaler Betrieb ohne API-Schlüssel oder externes Backend
 
 ## Datenabdeckung
 
-Cloud-Anbieter veröffentlichen in der Regel Regionen und Metropolstandorte, aber aus Sicherheitsgründen keine vollständigen Listen einzelner Gebäudeadressen. Atlas Cloud visualisiert deshalb die offiziellen Cloud-Regionen. Die Marker verwenden den Mittelpunkt des veröffentlichten Ortes, Bundesstaats oder der Metropolregion und sind nicht als exakte Gebäudeadresse zu verstehen.
+Cloud-Anbieter veröffentlichen in der Regel Regionen und Metropolstandorte, aber aus Sicherheitsgründen keine vollständigen Listen einzelner Gebäudeadressen. Atlas Cloud visualisiert deshalb die offiziellen Cloud-Regionen sowie die im Cloudflare-Statussystem einzeln geführten Edge-Rechenzentren. Die Marker verwenden Stadt-, Flughafen-, Bundesstaats- oder Metropolmittelpunkte und sind nicht als exakte Gebäudeadresse zu verstehen.
+
+Cloudflare nennt auf seiner Netzwerkseite 348 Städte. Das öffentliche Statussystem weist davon aktuell 341 Standorte mit eindeutigem dreistelligem Colo-Code und Kontinentzuordnung einzeln aus. Nur diese einzeln belegbaren Standorte werden als Pins dargestellt. Cloudflare-Standorte sind Edge-Rechenzentren im globalen Anycast-Netzwerk und keine klassischen Public-Cloud-Regionen.
 
 Souveräne und eingeschränkte Partitionen werden als eigene Einträge geführt. Dazu gehören Azure China, Azure Government, Azure DoD und die AWS European Sovereign Cloud. Die zwei angekündigten AWS Regionen in Saudi-Arabien und Chile sind als geplant markiert.
 
-Datenstand: 23. August 2026.
+Datenstand: 24. August 2026.
 
 ## Offizielle Quellen
 
@@ -35,6 +38,8 @@ Datenstand: 23. August 2026.
 - [AWS Region Codes](https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html)
 - [AWS European Sovereign Cloud](https://aws.amazon.com/blogs/aws/opening-the-aws-european-sovereign-cloud/)
 - [Google Cloud Locations](https://cloud.google.com/about/locations)
+- [Cloudflare Global Network](https://www.cloudflare.com/network/)
+- [Cloudflare System Status](https://www.cloudflarestatus.com/)
 
 ## Lokal starten
 
@@ -54,7 +59,7 @@ npm test
 npm run build
 ```
 
-Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen und die veröffentlichte AWS-Zonensumme.
+Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen, die veröffentlichte AWS-Zonensumme sowie Standortart und Colo-Codes der Cloudflare-Rechenzentren.
 
 Der 3D-Globus wird als eigener JavaScript-Chunk erst bei WebGL-Unterstützung geladen. Dadurch bleibt die erste Übertragung klein und Browser ohne WebGL laden ausschließlich die 2D-Kompatibilitätsansicht.
 
