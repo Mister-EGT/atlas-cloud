@@ -5,9 +5,9 @@ import type { WebGLGlobeProps } from "./WebGLGlobe";
 const WebGLGlobe = lazy(() => import("./WebGLGlobe").then((module) => ({ default: module.WebGLGlobe })));
 const FlatWorldMap = lazy(() => import("./FlatWorldMap").then((module) => ({ default: module.FlatWorldMap })));
 
-function supportsWebGL() {
+function supportsWebGL(forcedMode: "auto" | "3d" | "2d" = "auto") {
   if (typeof window === "undefined") return false;
-  if (new URLSearchParams(window.location.search).get("render") === "2d") return false;
+  if (forcedMode === "2d" || new URLSearchParams(window.location.search).get("render") === "2d") return false;
   try {
     const canvas = document.createElement("canvas");
     return Boolean(
@@ -41,7 +41,7 @@ class WebGLErrorBoundary extends Component<{
   }
 }
 
-export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mode: "3d" | "2d") => void }) {
+export function GlobeCanvas(props: WebGLGlobeProps & { forcedMode?: "auto" | "3d" | "2d"; onRenderModeChange?: (mode: "3d" | "2d") => void }) {
   const fallback = (
     <Suspense fallback={<div className="globe-loading" role="status">Kartenansicht wird geladen</div>}>
       <FlatWorldMap
@@ -52,7 +52,7 @@ export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mod
       />
     </Suspense>
   );
-  const webglAvailable = useMemo(supportsWebGL, []);
+  const webglAvailable = useMemo(() => supportsWebGL(props.forcedMode), [props.forcedMode]);
 
   useEffect(() => {
     props.onRenderModeChange?.(webglAvailable ? "3d" : "2d");
@@ -60,6 +60,7 @@ export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mod
 
   return (
     <section className="globe-stage" aria-label="Interaktive Weltkarte der Cloud-Regionen">
+      {props.regions.length === 0 ? <div className="map-empty-state" role="status"><strong>Keine Standorte sichtbar</strong><span>Ändere die Filter oder aktiviere einen weiteren Layer.</span></div> : null}
       {webglAvailable ? (
         <WebGLErrorBoundary fallback={fallback} onFallback={() => props.onRenderModeChange?.("2d")}>
           <Suspense fallback={<div className="globe-loading" role="status">3D-Globus wird geladen</div>}>

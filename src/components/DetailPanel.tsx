@@ -1,5 +1,5 @@
-import { ChevronDown, ExternalLink, LocateFixed } from "lucide-react";
-import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
+import { ChevronDown, ExternalLink, LocateFixed, Scale } from "lucide-react";
+import { PROVIDERS, SERVICES, type CloudRegion, type ProviderId } from "../data/regions";
 import { Panel } from "./Panel";
 import { ProviderMark } from "./ProviderMark";
 
@@ -51,6 +51,8 @@ function RegionDetailList({ region, includeStatus = false }: { region: CloudRegi
       <DetailRow label="Standortcode" mono>{region.code ?? "Noch nicht veröffentlicht"}</DetailRow>
       <DetailRow label="Verfügbarkeitszonen">{getAvailability(region)}</DetailRow>
       <DetailRow label="Zugriff">{region.restricted ? "Eingeschränkt" : "Allgemein verfügbar"}</DetailRow>
+      <DetailRow label="Dienste">{region.services.length ? region.services.map((service) => SERVICES[service].shortLabel).join(", ") : "Nicht ausgewiesen"}</DetailRow>
+      {region.operationalStatus !== "unknown" ? <DetailRow label="Betriebszustand">{region.operationalStatus}</DetailRow> : null}
       {region.pairedRegion ? <DetailRow label="Gepaarte Region">{region.pairedRegion}</DetailRow> : null}
       {region.provider === "cloudflare" ? <DetailRow label="Leistungsumfang">Vollständiger Cloudflare-Service-Stack</DetailRow> : null}
       {region.trackedSince ? (
@@ -61,6 +63,7 @@ function RegionDetailList({ region, includeStatus = false }: { region: CloudRegi
       <DetailRow label="Breitengrad" mono>{region.lat.toFixed(4)}°</DetailRow>
       <DetailRow label="Längengrad" mono>{region.lng.toFixed(4)}°</DetailRow>
       <DetailRow label="Pin-Genauigkeit">Stadt- oder Flughafenmittelpunkt</DetailRow>
+      <DetailRow label="Daten verifiziert">{new Date(region.provenance.verifiedAt).toLocaleDateString("de-DE")}</DetailRow>
     </dl>
   );
 }
@@ -157,7 +160,7 @@ function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
   );
 }
 
-export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
+export function DetailPanel({ regions, compareIds = [], onToggleCompare }: { regions: CloudRegion[]; compareIds?: string[]; onToggleCompare?: (region: CloudRegion) => void }) {
   if (regions.length === 0) {
     return (
       <Panel title="Standortdetails" className="detail-panel">
@@ -173,6 +176,8 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
   return (
     <Panel title="Standortdetails" className="detail-panel">
       {regions.length === 1 ? <SingleRegionDetails region={regions[0]} /> : <GroupedRegionDetails regions={regions} />}
+
+      {onToggleCompare ? <div className="detail-compare-actions">{regions.slice(0, 4).map((region) => <button type="button" key={region.id} className={compareIds.includes(region.id) ? "is-active" : ""} onClick={() => onToggleCompare(region)}><Scale />{compareIds.includes(region.id) ? `${region.name} entfernen` : `${region.name} vergleichen`}</button>)}</div> : null}
 
       <p className="source-note">
         Gezeigt werden veröffentlichte Cloud-Regionen und Cloudflare-Edge-Standorte. Pins markieren Stadt- oder Flughafenmittelpunkte, keine Gebäudeadressen.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CLOUD_REGIONS } from "../data/regions";
-import { getMarkerAriaLabel, getMarkerProviderStates, groupRegions } from "./globeMarkers";
+import { filterMarkersForView, getMarkerAriaLabel, getMarkerProviderStates, groupRegions } from "./globeMarkers";
 
 describe("globe marker groups", () => {
   it("keeps all providers and statuses in a shared location marker", () => {
@@ -37,5 +37,15 @@ describe("globe marker groups", () => {
 
     expect(markers).toHaveLength(santiagoRegions.length);
     expect(markers.every((marker) => marker.regions.length === 1)).toBe(true);
+  });
+
+  it("reduces DOM marker detail with altitude and preserves the selection", () => {
+    const markers = groupRegions(CLOUD_REGIONS, false);
+    const selectedId = markers.at(-1)!.regions[0].id;
+    const overview = filterMarkersForView(markers, { lat: 0, lng: 0, altitude: 2 }, selectedId);
+    const close = filterMarkersForView(markers, { lat: 0, lng: 0, altitude: 0.5 }, selectedId);
+    expect(overview.length).toBeLessThanOrEqual(91);
+    expect(overview.some((marker) => marker.regions[0].id === selectedId)).toBe(true);
+    expect(close).toHaveLength(markers.length);
   });
 });

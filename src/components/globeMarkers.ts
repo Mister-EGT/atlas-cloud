@@ -18,6 +18,23 @@ export interface GlobeMarker {
   status: "active" | "planned" | "mixed";
 }
 
+export function filterMarkersForView(markers: GlobeMarker[], viewpoint: { lat: number; lng: number; altitude: number }, selectedId?: string) {
+  const toRadians = (value: number) => value * Math.PI / 180;
+  const angularDistance = (marker: GlobeMarker) => {
+    const left = toRadians(viewpoint.lat);
+    const right = toRadians(marker.lat);
+    const delta = toRadians(marker.lng - viewpoint.lng);
+    return Math.acos(Math.min(1, Math.max(-1, Math.sin(left) * Math.sin(right) + Math.cos(left) * Math.cos(right) * Math.cos(delta))));
+  };
+  const limit = viewpoint.altitude > 1.35 ? 90 : viewpoint.altitude > 0.75 ? 180 : markers.length;
+  const nearest = [...markers].sort((left, right) => angularDistance(left) - angularDistance(right)).slice(0, limit);
+  if (selectedId && !nearest.some((marker) => marker.regions.some((region) => region.id === selectedId))) {
+    const selectedMarker = markers.find((marker) => marker.regions.some((region) => region.id === selectedId));
+    if (selectedMarker) nearest.push(selectedMarker);
+  }
+  return nearest;
+}
+
 function sortRegions(regions: CloudRegion[]) {
   return [...regions].sort((left, right) => {
     const providerDifference = PROVIDER_ORDER.indexOf(left.provider) - PROVIDER_ORDER.indexOf(right.provider);
@@ -60,6 +77,53 @@ export function getMarkerAriaLabel(marker: GlobeMarker) {
   }
   const providerNames = marker.providers.map((provider) => PROVIDERS[provider].shortName).join(", ");
   return `${marker.regions.length} Standorte bei ${getMarkerLocation(marker)} von ${providerNames} auswählen`;
+}
+
+export function createMarkerElement(marker: GlobeMarker, selected: boolean) {
+  const providerStates = getMarkerProviderStates(marker);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `globe-html-marker${selected ? " is-selected" : ""}`;
+  button.dataset.regionCodes = marker.regions.map((region) => region.code ?? region.id).join(" ");
+  button.dataset.providerCount = String(marker.providers.length);
+  button.setAttribute("aria-label", getMarkerAriaLabel(marker));
+  providerStates.forEach((providerState) => {
+    const dot = document.createElement("span");
+    dot.className = `globe-html-marker__dot is-${providerState.status}`;
+    dot.style.setProperty("--marker-color", PROVIDERS[providerState.provider].color);
+    dot.setAttribute("aria-hidden", "true");
+    button.append(dot);
+  });
+  const tooltip = document.createElement("span");
+  tooltip.className = "globe-html-marker__tooltip";
+  const providerElement = document.createElement("span");
+  providerElement.className = "globe-html-marker__providers";
+  providerStates.forEach((state) => {
+    const badge = document.createElement("small");
+    badge.className = `is-${state.status}`;
+    badge.style.setProperty("--provider-color", PROVIDERS[state.provider].color);
+    badge.textContent = `${PROVIDERS[state.provider].shortName}${state.status === "planned" ? " · geplant" : state.status === "mixed" ? " · aktiv + geplant" : ""}`;
+    providerElement.append(badge);
+  });
+  const name = document.createElement("strong");
+  name.textContent = marker.regions.length === 1 ? marker.regions[0].name : `${marker.regions.length} Standorte bei ${getMarkerLocation(marker)}`;
+  const regionList = document.createElement("span");
+  regionList.className = "globe-html-marker__regions";
+  marker.regions.forEach((region) => {
+    const line = document.createElement("span");
+    const code = document.createElement("code");
+    const regionName = document.createElement("span");
+    code.textContent = region.code ?? "Code folgt";
+    regionName.textContent = region.name;
+    line.append(code, regionName);
+    regionList.append(line);
+  });
+  const meta = document.createElement("span");
+  const first = marker.regions[0];
+  meta.textContent = marker.regions.length > 1 ? "Klicken, um alle Details zu öffnen" : first.zones ? `${first.zones} Zonen` : first.availabilityZones ? "Verfügbarkeitszonen unterstützt" : first.country;
+  tooltip.append(providerElement, name, regionList, meta);
+  button.append(tooltip);
+  return { button, tooltip };
 }
 
 function distanceInKilometres(left: CloudRegion, right: CloudRegion) {

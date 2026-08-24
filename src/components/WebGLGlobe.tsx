@@ -1,13 +1,11 @@
-import { LocateFixed, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import { Color, MeshPhongMaterial, type PerspectiveCamera } from "three";
-import { PROVIDERS, type CloudRegion } from "../data/regions";
+import type { CloudRegion } from "../data/regions";
 import {
-  getMarkerAriaLabel,
-  getMarkerLocation,
-  getMarkerProviderStates,
+  createMarkerElement,
   groupRegions,
+  filterMarkersForView,
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
@@ -27,8 +25,10 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const hasAppliedInitialViewRef = useRef(false);
   const [size, setSize] = useState({ width: 700, height: 700 });
+  const [viewpoint, setViewpoint] = useState({ lat: 28, lng: 10, altitude: 1.92 });
   const primarySelected = selectedRegions[0];
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
+  const visibleMarkers = useMemo(() => filterMarkersForView(markers, viewpoint, primarySelected?.id), [markers, primarySelected?.id, viewpoint]);
   const globeMaterial = useMemo(() => new MeshPhongMaterial({
     color: new Color("#102438"),
     emissive: new Color("#071522"),
@@ -38,63 +38,8 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
   const createHtmlMarker = useCallback((item: object) => {
     const marker = item as GlobeMarker;
-    const providerStates = getMarkerProviderStates(marker);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "globe-html-marker";
-    button.dataset.regionCodes = marker.regions.map((region) => region.code ?? region.id).join(" ");
-    button.dataset.providerCount = String(marker.providers.length);
-    button.setAttribute("aria-label", getMarkerAriaLabel(marker));
-    if (selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id))) {
-      button.classList.add("is-selected");
-    }
-
-    providerStates.forEach((providerState) => {
-      const dot = document.createElement("span");
-      dot.className = `globe-html-marker__dot is-${providerState.status}`;
-      dot.style.setProperty("--marker-color", PROVIDERS[providerState.provider].color);
-      dot.setAttribute("aria-hidden", "true");
-      button.append(dot);
-    });
-
-    const tooltipElement = document.createElement("span");
-    tooltipElement.className = "globe-html-marker__tooltip";
-    const providerElement = document.createElement("span");
-    providerElement.className = "globe-html-marker__providers";
-    providerStates.forEach((providerState) => {
-      const providerBadge = document.createElement("small");
-      providerBadge.className = `is-${providerState.status}`;
-      providerBadge.style.setProperty("--provider-color", PROVIDERS[providerState.provider].color);
-      providerBadge.textContent = `${PROVIDERS[providerState.provider].shortName}${providerState.status === "planned" ? " · geplant" : providerState.status === "mixed" ? " · aktiv + geplant" : ""}`;
-      providerElement.append(providerBadge);
-    });
-    const nameElement = document.createElement("strong");
-    nameElement.textContent = marker.regions.length === 1
-      ? marker.regions[0].name
-      : `${marker.regions.length} Standorte bei ${getMarkerLocation(marker)}`;
-    const regionList = document.createElement("span");
-    regionList.className = "globe-html-marker__regions";
-    marker.regions.forEach((region) => {
-      const regionLine = document.createElement("span");
-      const codeElement = document.createElement("code");
-      codeElement.textContent = region.code ?? "Code folgt";
-      const regionName = document.createElement("span");
-      regionName.textContent = region.name;
-      regionLine.append(codeElement, regionName);
-      regionList.append(regionLine);
-    });
-    const metaElement = document.createElement("span");
-    const first = marker.regions[0];
-    metaElement.textContent = marker.regions.length > 1
-      ? "Klicken, um alle Details zu öffnen"
-      : first.zones
-        ? `${first.zones} Zonen`
-        : first.availabilityZones
-          ? "Verfügbarkeitszonen unterstützt"
-          : first.country;
-
-    tooltipElement.append(providerElement, nameElement, regionList, metaElement);
-    button.append(tooltipElement);
+    const selected = selectedRegions.some((region) => marker.regions.some((candidate) => candidate.id === region.id));
+    const { button, tooltip: tooltipElement } = createMarkerElement(marker, selected);
     const showTooltip = () => {
       button.classList.add("is-hovered");
       const controls = globeRef.current?.controls();
@@ -184,7 +129,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
           polygonStrokeColor={() => "rgba(255, 255, 255, 0.14)"}
           polygonAltitude={0.004}
           polygonsTransitionDuration={0}
-          htmlElementsData={markers}
+          htmlElementsData={visibleMarkers}
           htmlLat="lat"
           htmlLng="lng"
           htmlAltitude={0.014}
@@ -198,12 +143,13 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
           ringPropagationSpeed={2.4}
           ringRepeatPeriod={1150}
           enablePointerInteraction
+          onZoom={(next) => setViewpoint({ lat: next.lat, lng: next.lng, altitude: next.altitude })}
         />
       </div>
       <div className="globe-controls" aria-label="Kartensteuerung">
-        <button type="button" onClick={() => adjustZoom("in")} aria-label="Vergrößern"><Plus /></button>
-        <button type="button" onClick={() => adjustZoom("out")} aria-label="Verkleinern"><Minus /></button>
-        <button type="button" onClick={reset} aria-label="Ansicht zurücksetzen"><LocateFixed /></button>
+        <button type="button" onClick={() => adjustZoom("in")} aria-label="Vergrößern"><span aria-hidden="true">+</span></button>
+        <button type="button" onClick={() => adjustZoom("out")} aria-label="Verkleinern"><span aria-hidden="true">−</span></button>
+        <button type="button" onClick={reset} aria-label="Ansicht zurücksetzen"><span aria-hidden="true">◎</span></button>
       </div>
     </>
   );
