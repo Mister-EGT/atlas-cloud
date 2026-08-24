@@ -7,9 +7,10 @@ test("search, filters, shortlist and deep-link restore", async ({ page }) => {
   const search = page.getByRole("combobox", { name: "Standort suchen" });
   await search.fill("aws frankfurt");
   await expect(page.getByRole("listbox")).toBeVisible();
+  await expect(page.getByRole("option", { name: /Europe \(Frankfurt\)/ })).toBeVisible();
   await search.press("ArrowDown");
   await search.press("Enter");
-  await expect(page.getByText("ausgewählt", { exact: false }).last()).toBeAttached();
+  await expect(page).toHaveURL(/selected=aws-eu-central-1/);
 
   await page.getByRole("button", { name: "Tabelle" }).click();
   await expect(page.getByRole("heading", { name: "Standorttabelle" })).toBeVisible();

@@ -28,7 +28,7 @@ export function SettingsPanel({ state, onChange, onSelect, visibleRegions, rende
   const matches = useMemo(() => {
     if (!tokens.length) return [];
     return CLOUD_REGIONS.filter((region) => {
-      const text = [region.name, region.code ?? "", region.location, region.country, region.continent, region.networkRegion ?? "", PROVIDERS[region.provider].name, ...region.services.map((service) => SERVICES[service].label)].join(" ").toLocaleLowerCase("de");
+      const text = [region.name, region.code ?? "", region.location, region.country, region.continent, region.networkRegion ?? "", PROVIDERS[region.provider].name, PROVIDERS[region.provider].shortName, ...region.services.map((service) => SERVICES[service].label)].join(" ").toLocaleLowerCase("de");
       return tokens.every((token) => text.includes(token));
     }).slice(0, 10);
   }, [tokens.join("|")]);
