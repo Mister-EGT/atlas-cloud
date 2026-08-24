@@ -10,3 +10,16 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) window.dispatchEvent(new Event("atlas-update-ready"));
+        });
+      });
+    }).catch((error) => console.warn("Offline-Modus konnte nicht registriert werden.", error));
+  });
+}

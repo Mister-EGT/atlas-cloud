@@ -1,0 +1,11 @@
+{
+  "name": "Atlas Cloud · Cloud-Architect Workbench",
+  "short_name": "Atlas Cloud",
+  "description": "Statischer Multi-Cloud-Regionsvergleich für Cloud-Architekten.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#102438",
+  "lang": "de",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
