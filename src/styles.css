@@ -391,13 +391,7 @@ button {
 }
 
 .grouped-region-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  min-height: 78px;
-  padding: 9px 32px 9px 9px;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: #fff;
@@ -405,7 +399,37 @@ button {
   corner-shape: squircle;
 }
 
-.grouped-region-card > div {
+.grouped-region-card > summary {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto 16px;
+  gap: 8px;
+  align-items: center;
+  min-height: 78px;
+  padding: 9px;
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 0.16s ease-out;
+}
+
+.grouped-region-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.grouped-region-card > summary:hover {
+  background: var(--accent);
+}
+
+.grouped-region-card > summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, #3ba6f1 45%, transparent);
+  outline-offset: -3px;
+}
+
+.grouped-region-card[open] > summary {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary) 3%, white);
+}
+
+.grouped-region-card__identity {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -448,27 +472,31 @@ button {
   background: #fff;
 }
 
-.grouped-region-card > a {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: grid;
-  width: 23px;
-  height: 23px;
-  place-items: center;
-  border-radius: 50%;
+.grouped-region-card__chevron {
+  width: 15px;
+  height: 15px;
   color: var(--muted-foreground);
-  transition: color 0.16s ease-out, background-color 0.16s ease-out;
+  stroke-width: 1.8;
+  transition: transform 0.18s ease-out;
 }
 
-.grouped-region-card > a:hover {
-  color: var(--primary);
-  background: var(--accent);
+.grouped-region-card[open] .grouped-region-card__chevron {
+  transform: rotate(180deg);
 }
 
-.grouped-region-card > a svg {
-  width: 12px;
-  height: 12px;
+.grouped-region-card__details {
+  padding: 2px 11px 12px;
+  background: #fff;
+}
+
+.grouped-region-card__details .detail-row {
+  grid-template-columns: minmax(92px, 0.9fr) minmax(0, 1.1fr);
+  min-height: 40px;
+  font-size: 11px;
+}
+
+.grouped-region-card__details .source-link {
+  border: 1px solid var(--border);
 }
 
 .detail-list--group {
