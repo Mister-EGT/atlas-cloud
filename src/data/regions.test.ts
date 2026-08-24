@@ -36,6 +36,7 @@ describe("cloud region dataset", () => {
     expect(CLOUDFLARE_REGIONS.every((region) => region.locationType === "edge-location")).toBe(true);
     expect(CLOUDFLARE_REGIONS.every((region) => region.status === "active")).toBe(true);
     expect(CLOUDFLARE_REGIONS.every((region) => region.code?.length === 3)).toBe(true);
+    expect(CLOUDFLARE_REGIONS.every((region) => region.location.trim().length > 0)).toBe(true);
     expect(new Set(CLOUDFLARE_REGIONS.map((region) => region.code)).size).toBe(CLOUDFLARE_REGIONS.length);
   });
 });
