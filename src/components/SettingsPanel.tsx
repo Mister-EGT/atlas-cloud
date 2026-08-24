@@ -22,7 +22,12 @@ export interface ViewSettings {
   atmosphere: boolean;
 }
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string }) {
+function Toggle({ checked, onChange, label, disabled = false }: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       className={`toggle ${checked ? "is-on" : ""}`}
@@ -30,6 +35,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (val
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
     >
       <span />
@@ -42,11 +48,13 @@ export function SettingsPanel({
   onChange,
   onSelect,
   visibleRegions,
+  renderMode,
 }: {
   settings: ViewSettings;
   onChange: (settings: ViewSettings) => void;
   onSelect: (region: CloudRegion) => void;
   visibleRegions: CloudRegion[];
+  renderMode: "3d" | "2d";
 }) {
   const [query, setQuery] = useState("");
   const matches = useMemo(() => {
@@ -158,12 +166,12 @@ export function SettingsPanel({
           <Toggle label="Nahe Marker gruppieren" checked={settings.clusterMarkers} onChange={(value) => onChange({ ...settings, clusterMarkers: value })} />
         </div>
         <div>
-          <span>Automatisch drehen</span>
-          <Toggle label="Globus automatisch drehen" checked={settings.autoRotate} onChange={(value) => onChange({ ...settings, autoRotate: value })} />
+          <span>Automatisch drehen {renderMode === "2d" ? <small>Nur 3D</small> : null}</span>
+          <Toggle label="Globus automatisch drehen" disabled={renderMode === "2d"} checked={settings.autoRotate} onChange={(value) => onChange({ ...settings, autoRotate: value })} />
         </div>
         <div>
-          <span>Atmosphäre</span>
-          <Toggle label="Atmosphäre anzeigen" checked={settings.atmosphere} onChange={(value) => onChange({ ...settings, atmosphere: value })} />
+          <span>Atmosphäre {renderMode === "2d" ? <small>Nur 3D</small> : null}</span>
+          <Toggle label="Atmosphäre anzeigen" disabled={renderMode === "2d"} checked={settings.atmosphere} onChange={(value) => onChange({ ...settings, atmosphere: value })} />
         </div>
       </div>
 

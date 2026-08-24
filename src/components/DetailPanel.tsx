@@ -1,6 +1,5 @@
 import { ExternalLink, LocateFixed } from "lucide-react";
-import type { CloudRegion } from "../data/regions";
-import { PROVIDERS } from "../data/regions";
+import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
 import { Panel } from "./Panel";
 import { ProviderMark } from "./ProviderMark";
 
@@ -13,19 +12,7 @@ function DetailRow({ label, children, mono = false }: { label: string; children:
   );
 }
 
-export function DetailPanel({ region }: { region: CloudRegion | null }) {
-  if (!region) {
-    return (
-      <Panel title="Standortdetails" className="detail-panel">
-        <div className="empty-state">
-          <LocateFixed aria-hidden="true" />
-          <strong>Kein Standort sichtbar</strong>
-          <span>Ändere die Filter, um wieder Cloud-Regionen anzuzeigen.</span>
-        </div>
-      </Panel>
-    );
-  }
-
+function SingleRegionDetails({ region }: { region: CloudRegion }) {
   const provider = PROVIDERS[region.provider];
   const availability = region.zones
     ? `${region.zones} Zonen`
@@ -34,7 +21,7 @@ export function DetailPanel({ region }: { region: CloudRegion | null }) {
       : "Nicht ausgewiesen";
 
   return (
-    <Panel title="Standortdetails" className="detail-panel">
+    <>
       <div className="selected-region">
         <ProviderMark provider={region.provider} />
         <div>
@@ -68,6 +55,79 @@ export function DetailPanel({ region }: { region: CloudRegion | null }) {
         </span>
         <ExternalLink aria-hidden="true" />
       </a>
+    </>
+  );
+}
+
+function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
+  const providerIds = (["azure", "aws", "gcp"] as ProviderId[]).filter((provider) =>
+    regions.some((region) => region.provider === provider),
+  );
+  const locations = [...new Set(regions.map((region) => region.location))];
+  const countries = [...new Set(regions.map((region) => region.country))];
+  const location = locations.length === 1 ? locations[0] : countries.join(", ");
+  const activeCount = regions.filter((region) => region.status === "active").length;
+  const plannedCount = regions.length - activeCount;
+
+  return (
+    <>
+      <div className="selected-region selected-region--group">
+        <div className="provider-stack" aria-label={providerIds.map((provider) => PROVIDERS[provider].name).join(", ")}>
+          {providerIds.map((provider) => <ProviderMark key={provider} provider={provider} compact />)}
+        </div>
+        <div>
+          <strong>{location}</strong>
+          <span>{regions.length} Regionen von {providerIds.length} {providerIds.length === 1 ? "Anbieter" : "Anbietern"}</span>
+        </div>
+      </div>
+
+      <div className="status-line status-line--summary">
+        {activeCount > 0 ? <span><i className="status-dot status-dot--active" />{activeCount} aktiv</span> : null}
+        {plannedCount > 0 ? <span><i className="status-dot status-dot--planned" />{plannedCount} geplant</span> : null}
+      </div>
+
+      <div className="grouped-region-list" aria-label="Anbieter und Regionen an diesem Standort">
+        <h3>Anbieter und Regionen</h3>
+        {regions.map((region) => (
+          <article className={`grouped-region-card is-${region.status}`} key={region.id}>
+            <ProviderMark provider={region.provider} compact />
+            <div>
+              <small>{PROVIDERS[region.provider].shortName}</small>
+              <strong>{region.name}</strong>
+              <code>{region.code ?? "Code noch nicht veröffentlicht"}</code>
+            </div>
+            <span className="region-status">{region.status === "planned" ? "Geplant" : "Aktiv"}</span>
+            <a href={region.source} target="_blank" rel="noreferrer" aria-label={`Offizielle Quelle für ${region.name}`}>
+              <ExternalLink aria-hidden="true" />
+            </a>
+          </article>
+        ))}
+      </div>
+
+      <dl className="detail-list detail-list--group">
+        <DetailRow label="Standort">{location}</DetailRow>
+        <DetailRow label="Land">{countries.join(", ")}</DetailRow>
+      </dl>
+    </>
+  );
+}
+
+export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
+  if (regions.length === 0) {
+    return (
+      <Panel title="Standortdetails" className="detail-panel">
+        <div className="empty-state">
+          <LocateFixed aria-hidden="true" />
+          <strong>Kein Standort sichtbar</strong>
+          <span>Ändere die Filter, um wieder Cloud-Regionen anzuzeigen.</span>
+        </div>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel title="Standortdetails" className="detail-panel">
+      {regions.length === 1 ? <SingleRegionDetails region={regions[0]} /> : <GroupedRegionDetails regions={regions} />}
 
       <p className="source-note">
         Regionen sind veröffentlichte Metropolstandorte. Die Anbieter nennen aus Sicherheitsgründen meist keine Gebäudeadressen.

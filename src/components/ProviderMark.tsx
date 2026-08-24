@@ -1,26 +1,19 @@
+import awsLogo from "devicon/icons/amazonwebservices/amazonwebservices-original-wordmark.svg";
+import azureLogo from "devicon/icons/azure/azure-original.svg";
+import googleCloudLogo from "devicon/icons/googlecloud/googlecloud-original.svg";
 import type { ProviderId } from "../data/regions";
 
+const providerLogos: Record<ProviderId, { src: string; label: string }> = {
+  azure: { src: azureLogo, label: "Microsoft Azure" },
+  aws: { src: awsLogo, label: "Amazon Web Services" },
+  gcp: { src: googleCloudLogo, label: "Google Cloud" },
+};
+
 export function ProviderMark({ provider, compact = false }: { provider: ProviderId; compact?: boolean }) {
-  if (provider === "azure") {
-    return (
-      <span className={`provider-mark provider-mark--azure ${compact ? "is-compact" : ""}`} aria-hidden="true">
-        A
-      </span>
-    );
-  }
-
-  if (provider === "aws") {
-    return (
-      <span className={`provider-mark provider-mark--aws ${compact ? "is-compact" : ""}`} aria-hidden="true">
-        <span>aws</span>
-        <i />
-      </span>
-    );
-  }
-
+  const logo = providerLogos[provider];
   return (
-    <span className={`provider-mark provider-mark--gcp ${compact ? "is-compact" : ""}`} aria-hidden="true">
-      G
+    <span className={`provider-mark provider-mark--${provider} ${compact ? "is-compact" : ""}`} aria-hidden="true">
+      <img src={logo.src} alt={logo.label} />
     </span>
   );
 }
