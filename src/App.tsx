@@ -26,9 +26,7 @@ export function filterRegions(regions: CloudRegion[], settings: ViewSettings) {
 export function App() {
   const [settings, setSettings] = useState(initialSettings);
   const [renderMode, setRenderMode] = useState<"3d" | "2d">("3d");
-  const [selectedRegions, setSelectedRegions] = useState<CloudRegion[]>(() => [
-    CLOUD_REGIONS.find((region) => region.code === "germanywestcentral") ?? CLOUD_REGIONS[0],
-  ]);
+  const [selectedRegions, setSelectedRegions] = useState<CloudRegion[]>([]);
 
   const visibleRegions = useMemo(() => filterRegions(CLOUD_REGIONS, settings), [settings]);
 
@@ -98,7 +96,7 @@ export function App() {
           ? `${selectedRegions.length} Standorte bei ${selectedRegions[0].location} ausgewählt`
           : selectedRegions[0]
             ? `${selectedRegions[0].name}, ${selectedRegions[0].location} ausgewählt`
-            : "Keine Region ausgewählt"}
+            : "Kein Standort ausgewählt"}
       </div>
     </div>
   );

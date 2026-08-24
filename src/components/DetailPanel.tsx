@@ -163,8 +163,8 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
       <Panel title="Standortdetails" className="detail-panel">
         <div className="empty-state">
           <LocateFixed aria-hidden="true" />
-          <strong>Kein Standort sichtbar</strong>
-          <span>Ändere die Filter, um wieder Cloud-Standorte anzuzeigen.</span>
+          <strong>Kein Standort ausgewählt</strong>
+          <span>Wähle einen Marker auf der Karte oder suche nach einem Standort.</span>
         </div>
       </Panel>
     );
