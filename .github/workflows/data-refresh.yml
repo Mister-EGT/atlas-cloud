@@ -1,0 +1,46 @@
+name: Refresh public cloud data
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: atlas-cloud-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Download into staging and validate before publishing
+        run: npm run data:refresh
+      - run: npm run data:validate
+      - name: Create a separate data pull request when sources changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Public sources are unchanged."
+            exit 0
+          fi
+          branch="data/refresh-$(date -u +%Y-%m-%d)"
+          git config user.name "atlas-cloud-data-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add src/data/generated src/data/raw
+          git commit -m "data: refresh official public snapshots"
+          git push --force-with-lease origin "$branch"
+          gh pr create --base main --head "$branch" --title "data: refresh official public snapshots" --body "Automated refresh from the public sources documented in the repository. Schema, IDs, coordinates, provenance and provider count thresholds passed before this PR was created."

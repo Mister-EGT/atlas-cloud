@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AWS_REGIONS, AZURE_REGIONS, CLOUDFLARE_REGIONS, CLOUD_REGIONS, GCP_REGIONS } from "./regions";
+import { AWS_REGIONS, AZURE_REGIONS, CLOUDFLARE_REGIONS, CLOUD_REGIONS, DATA_METADATA, GCP_REGIONS, PRICE_WORKLOAD } from "./regions";
 
 describe("cloud region dataset", () => {
   it("contains every researched public-cloud region and announcement", () => {
@@ -38,5 +38,12 @@ describe("cloud region dataset", () => {
     expect(CLOUDFLARE_REGIONS.every((region) => region.code?.length === 3)).toBe(true);
     expect(CLOUDFLARE_REGIONS.every((region) => region.location.trim().length > 0)).toBe(true);
     expect(new Set(CLOUDFLARE_REGIONS.map((region) => region.code)).size).toBe(CLOUDFLARE_REGIONS.length);
+  });
+
+  it("keeps provenance and the reference workload explicit", () => {
+    expect(Number.isNaN(Date.parse(DATA_METADATA.verifiedAt))).toBe(false);
+    expect(CLOUD_REGIONS.every((region) => region.provenance.sourceUrl.startsWith("https://") && !Number.isNaN(Date.parse(region.provenance.verifiedAt)))).toBe(true);
+    expect(PRICE_WORKLOAD.providerSkus).toEqual({ aws: "m7i.large", azure: "Standard_D2s_v5", gcp: "n2-standard-2" });
+    expect(PRICE_WORKLOAD.exclusions).toEqual(["Rabatte", "Steuern", "Storage", "Egress"]);
   });
 });

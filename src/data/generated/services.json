@@ -1,0 +1,9 @@
+[
+  { "id": "compute", "label": "Compute" },
+  { "id": "containers", "label": "Managed Kubernetes" },
+  { "id": "object-storage", "label": "Object Storage" },
+  { "id": "serverless", "label": "Serverless" },
+  { "id": "postgresql", "label": "Managed PostgreSQL" },
+  { "id": "key-management", "label": "Key Management" },
+  { "id": "edge-network", "label": "Edge Network" }
+]

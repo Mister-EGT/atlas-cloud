@@ -1,0 +1,19 @@
+{
+  "workload": {
+    "id": "linux-general-2x8",
+    "label": "Linux On-Demand · 2 vCPU · 8 GB RAM",
+    "currency": "USD",
+    "exclusions": [
+      "Rabatte",
+      "Steuern",
+      "Storage",
+      "Egress"
+    ],
+    "providerSkus": {
+      "aws": "m7i.large",
+      "azure": "Standard_D2s_v5",
+      "gcp": "n2-standard-2"
+    }
+  },
+  "prices": []
+}
