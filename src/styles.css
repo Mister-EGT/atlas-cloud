@@ -176,6 +176,21 @@ button {
   padding: 14px;
 }
 
+@media (min-width: 761px) {
+  .detail-panel,
+  .globe-stage {
+    height: calc(100vh - 84px);
+    align-self: start;
+  }
+}
+
+@media (min-width: 1121px) {
+  .settings-panel {
+    height: calc(100vh - 84px);
+    align-self: start;
+  }
+}
+
 .panel {
   display: flex;
   min-width: 0;
@@ -637,6 +652,42 @@ button {
   place-items: center;
   color: var(--muted-foreground);
   font-size: 12px;
+}
+
+.globe-mode-switch {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 6;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: var(--shadow-resting);
+  backdrop-filter: blur(8px);
+}
+
+.globe-mode-switch button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.globe-mode-switch button.is-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.globe-mode-switch button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
 }
 
 .flat-map {
