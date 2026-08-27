@@ -9,6 +9,7 @@ import {
   groupRegions,
   type GlobeMarker,
 } from "./globeMarkers";
+import { supportsMarkerPreview } from "./touchSupport";
 import { countryFeatureCollection, countryFeatures } from "./worldMapData";
 
 const MAP_WIDTH = 960;
@@ -28,6 +29,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
   onSelect: (regions: CloudRegion[]) => void;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const lastPointerTypeRef = useRef<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [hovered, setHovered] = useState<{
     marker: GlobeMarker;
@@ -103,11 +105,27 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                 tabIndex={0}
                 aria-label={getMarkerAriaLabel(marker)}
                 transform={`translate(${point[0]} ${point[1]})`}
-                onMouseEnter={(event) => showTooltip(marker, event.currentTarget)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={(event) => showTooltip(marker, event.currentTarget)}
-                onBlur={() => setHovered(null)}
-                onClick={() => onSelect(marker.regions)}
+                onPointerDown={(event) => {
+                  lastPointerTypeRef.current = event.pointerType;
+                }}
+                onPointerEnter={(event) => {
+                  if (supportsMarkerPreview(event.pointerType)) showTooltip(marker, event.currentTarget);
+                }}
+                onPointerLeave={(event) => {
+                  if (supportsMarkerPreview(event.pointerType)) setHovered(null);
+                }}
+                onFocus={(event) => {
+                  if (lastPointerTypeRef.current !== "touch") showTooltip(marker, event.currentTarget);
+                }}
+                onBlur={() => {
+                  lastPointerTypeRef.current = null;
+                  setHovered(null);
+                }}
+                onClick={() => {
+                  setHovered(null);
+                  lastPointerTypeRef.current = null;
+                  onSelect(marker.regions);
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -115,6 +133,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                   }
                 }}
               >
+                <circle className="flat-map__marker-hit-area" r="16" />
                 {isSelected ? <circle className="flat-map__selection" r={isCluster ? 12 : 10} /> : null}
                 {isCluster ? <circle className="flat-map__cluster-shell" r="8.25" /> : null}
                 {providerStates.map((providerState, index) => {

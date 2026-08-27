@@ -11,6 +11,7 @@ import {
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
+import { supportsMarkerPreview } from "./touchSupport";
 import { countryFeatures } from "./worldMapData";
 
 export interface WebGLGlobeProps {
@@ -95,6 +96,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
     tooltipElement.append(providerElement, nameElement, regionList, metaElement);
     button.append(tooltipElement);
+    let lastPointerType: string | null = null;
     const showTooltip = () => {
       button.classList.add("is-hovered");
       const controls = globeRef.current?.controls();
@@ -111,12 +113,26 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
       tooltipElement.style.removeProperty("opacity");
       tooltipElement.style.removeProperty("transform");
     };
-    button.addEventListener("mouseenter", showTooltip);
-    button.addEventListener("mouseleave", hideTooltip);
-    button.addEventListener("focus", showTooltip);
-    button.addEventListener("blur", hideTooltip);
+    button.addEventListener("pointerdown", (event) => {
+      lastPointerType = event.pointerType;
+    });
+    button.addEventListener("pointerenter", (event) => {
+      if (supportsMarkerPreview(event.pointerType)) showTooltip();
+    });
+    button.addEventListener("pointerleave", (event) => {
+      if (supportsMarkerPreview(event.pointerType)) hideTooltip();
+    });
+    button.addEventListener("focus", () => {
+      if (lastPointerType !== "touch") showTooltip();
+    });
+    button.addEventListener("blur", () => {
+      lastPointerType = null;
+      hideTooltip();
+    });
     button.addEventListener("click", (event) => {
       event.stopPropagation();
+      hideTooltip();
+      lastPointerType = null;
       onSelect(marker.regions);
     });
     return button;
