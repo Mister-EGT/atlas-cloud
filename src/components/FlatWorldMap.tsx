@@ -72,10 +72,43 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
     setZoom((current) => Math.min(2.2, Math.max(1, current + (direction === "in" ? 0.25 : -0.25))));
   };
 
+  const selectNearestMarker = (
+    clientX: number,
+    clientY: number,
+    pointerType: string,
+    svg: SVGSVGElement,
+  ) => {
+    const rect = svg.getBoundingClientRect();
+    const scale = Math.min(rect.width / MAP_WIDTH, rect.height / MAP_HEIGHT);
+    const offsetX = (rect.width - MAP_WIDTH * scale) / 2;
+    const offsetY = (rect.height - MAP_HEIGHT * scale) / 2;
+    const x = (clientX - rect.left - offsetX) / scale;
+    const y = (clientY - rect.top - offsetY) / scale;
+    const maxDistance = pointerType === "touch" ? 42 : pointerType === "pen" ? 28 : 18;
+
+    let nearest: { marker: GlobeMarker; distance: number } | undefined;
+    for (const { marker, point } of projectedMarkers) {
+      if (!point) continue;
+      const distance = Math.hypot(point[0] - x, point[1] - y);
+      if (!nearest || distance < nearest.distance) nearest = { marker, distance };
+    }
+
+    if (nearest && nearest.distance <= maxDistance) onSelect(nearest.marker.regions);
+  };
+
   return (
     <div className="flat-map" data-render-mode="2d" ref={mapRef}>
       <div className="flat-map__badge" role="status">2D-Kompatibilitätsansicht</div>
-      <svg className="flat-map__svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Standorte">
+      <svg
+        className="flat-map__svg"
+        viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+        role="img"
+        aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Standorte"
+        onPointerUp={(event) => {
+          selectNearestMarker(event.clientX, event.clientY, event.pointerType, event.currentTarget);
+          setHovered(null);
+        }}
+      >
         <defs>
           <radialGradient id="flat-ocean" cx="50%" cy="42%" r="68%">
             <stop offset="0" stopColor="#18324a" />
@@ -123,6 +156,10 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                 }}
                 onClick={() => {
                   setHovered(null);
+                  if (lastPointerTypeRef.current) {
+                    lastPointerTypeRef.current = null;
+                    return;
+                  }
                   lastPointerTypeRef.current = null;
                   onSelect(marker.regions);
                 }}
@@ -133,7 +170,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                   }
                 }}
               >
-                <circle className="flat-map__marker-hit-area" r="16" />
+                <circle className="flat-map__marker-hit-area" r="9" />
                 {isSelected ? <circle className="flat-map__selection" r={isCluster ? 12 : 10} /> : null}
                 {isCluster ? <circle className="flat-map__cluster-shell" r="8.25" /> : null}
                 {providerStates.map((providerState, index) => {
