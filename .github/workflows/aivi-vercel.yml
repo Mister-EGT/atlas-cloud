@@ -1,0 +1,223 @@
+name: Aivi Vercel Live Activity
+
+on:
+  repository_dispatch:
+    types:
+      - vercel.deployment.pending
+      - vercel.deployment.ready
+      - vercel.deployment.success
+      - vercel.deployment.error
+      - vercel.deployment.failed
+      - vercel.deployment.canceled
+
+permissions:
+  contents: read
+
+jobs:
+  update-live-activity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare deployment data
+        id: deployment
+        shell: bash
+        env:
+          EVENT: ${{ github.event.action }}
+          DEPLOYMENT_URL: ${{ github.event.client_payload.url }}
+          ENVIRONMENT: ${{ github.event.client_payload.environment }}
+          REPOSITORY: ${{ github.event.repository.name }}
+        run: |
+          START_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          if [ -z "$ENVIRONMENT" ]; then
+            ENVIRONMENT="Deployment"
+          fi
+
+          # Schönere Bezeichnung
+          case "$ENVIRONMENT" in
+            production)
+              ENV_LABEL="Production"
+              ;;
+            preview)
+              ENV_LABEL="Preview"
+              ;;
+            development)
+              ENV_LABEL="Development"
+              ;;
+            *)
+              ENV_LABEL="$ENVIRONMENT"
+              ;;
+          esac
+
+          case "$EVENT" in
+            vercel.deployment.pending)
+              STATUS="Wartet"
+              COLOR="orange"
+              ICON="clock.fill"
+              FINAL="false"
+              ;;
+
+            vercel.deployment.ready)
+              STATUS="Bereit"
+              COLOR="green"
+              ICON="checkmark.circle.fill"
+              FINAL="true"
+              ;;
+
+            vercel.deployment.success)
+              STATUS="Erfolgreich"
+              COLOR="green"
+              ICON="checkmark.circle.fill"
+              FINAL="true"
+              ;;
+
+            vercel.deployment.error)
+              STATUS="Fehler"
+              COLOR="red"
+              ICON="xmark.circle.fill"
+              FINAL="true"
+              ;;
+
+            vercel.deployment.failed)
+              STATUS="Fehlgeschlagen"
+              COLOR="red"
+              ICON="xmark.circle.fill"
+              FINAL="true"
+              ;;
+
+            vercel.deployment.canceled)
+              STATUS="Abgebrochen"
+              COLOR="gray"
+              ICON="xmark.circle.fill"
+              FINAL="true"
+              ;;
+
+            *)
+              STATUS="Deployment"
+              COLOR="blue"
+              ICON="hammer.fill"
+              FINAL="false"
+              ;;
+          esac
+
+          echo "start_time=$START_TIME" >> "$GITHUB_OUTPUT"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+          echo "icon=$ICON" >> "$GITHUB_OUTPUT"
+          echo "final=$FINAL" >> "$GITHUB_OUTPUT"
+          echo "environment=$ENV_LABEL" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Update running deployment
+        if: steps.deployment.outputs.final == 'false'
+        env:
+          AIVI_TOKEN: ${{ secrets.AIVI_TOKEN }}
+          STATUS: ${{ steps.deployment.outputs.status }}
+          COLOR: ${{ steps.deployment.outputs.color }}
+          ICON: ${{ steps.deployment.outputs.icon }}
+          ENVIRONMENT: ${{ steps.deployment.outputs.environment }}
+          REPOSITORY: ${{ steps.deployment.outputs.repository }}
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.url }}
+          START_TIME: ${{ steps.deployment.outputs.start_time }}
+        shell: bash
+        run: |
+          jq -n \
+            --arg status "$STATUS" \
+            --arg color "$COLOR" \
+            --arg icon "$ICON" \
+            --arg environment "$ENVIRONMENT" \
+            --arg repository "$REPOSITORY" \
+            --arg url "$DEPLOYMENT_URL" \
+            --arg start "$START_TIME" \
+            '{
+              state: "ONGOING",
+              content: {
+                template: "monitor",
+                icon: {
+                  name: $icon,
+                  rendering_mode: "hierarchical",
+                  primary_color: $color
+                },
+                left_column: {
+                  header: "VERCEL",
+                  value: {
+                    value: $status,
+                    text_color: $color
+                  },
+                  footer: $environment
+                },
+                right_column: {
+                  header: "SEIT",
+                  value: {
+                    value: $start,
+                    formatter: "time_since"
+                  },
+                  footer: $repository
+                },
+                primary_column: "left",
+                tap_url: $url
+              }
+            }' > payload.json
+
+          curl --fail-with-body \
+            -X PATCH \
+            "https://api.getaivi.app/activity/vercel-deployment" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Token $AIVI_TOKEN" \
+            --data-binary @payload.json
+
+      - name: Show final deployment state
+        if: steps.deployment.outputs.final == 'true'
+        env:
+          AIVI_TOKEN: ${{ secrets.AIVI_TOKEN }}
+          STATUS: ${{ steps.deployment.outputs.status }}
+          COLOR: ${{ steps.deployment.outputs.color }}
+          ICON: ${{ steps.deployment.outputs.icon }}
+          ENVIRONMENT: ${{ steps.deployment.outputs.environment }}
+          REPOSITORY: ${{ steps.deployment.outputs.repository }}
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.url }}
+        shell: bash
+        run: |
+          jq -n \
+            --arg status "$STATUS" \
+            --arg color "$COLOR" \
+            --arg icon "$ICON" \
+            --arg environment "$ENVIRONMENT" \
+            --arg repository "$REPOSITORY" \
+            --arg url "$DEPLOYMENT_URL" \
+            '{
+              state: "IDLE",
+              content: {
+                template: "monitor",
+                icon: {
+                  name: $icon,
+                  rendering_mode: "hierarchical",
+                  primary_color: $color
+                },
+                left_column: {
+                  header: "VERCEL",
+                  value: {
+                    value: $status,
+                    text_color: $color
+                  },
+                  footer: $environment
+                },
+                right_column: {
+                  header: "PROJEKT",
+                  value: {
+                    value: $repository
+                  },
+                  footer: "Deployment beendet"
+                },
+                primary_column: "left",
+                tap_url: $url
+              }
+            }' > payload.json
+
+          curl --fail-with-body \
+            -X PATCH \
+            "https://api.getaivi.app/activity/vercel-deployment" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Token $AIVI_TOKEN" \
+            --data-binary @payload.json
