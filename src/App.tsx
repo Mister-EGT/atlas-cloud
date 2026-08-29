@@ -6,7 +6,7 @@ import { SettingsPanel, type ViewSettings } from "./components/SettingsPanel";
 import { CLOUD_REGIONS, type CloudRegion } from "./data/regions";
 
 const initialSettings: ViewSettings = {
-  providers: { azure: true, aws: true, gcp: true, cloudflare: true },
+  providers: { azure: true, aws: true, gcp: true, cloudflare: true, proton: true },
   status: "all",
   continent: "all",
   clusterMarkers: true,
@@ -23,20 +23,22 @@ export function filterRegions(regions: CloudRegion[], settings: ViewSettings) {
   });
 }
 
+export function keepVisibleSelection(current: CloudRegion[], visibleRegions: CloudRegion[]) {
+  if (current.length === 0) return current;
+  const visibleIds = new Set(visibleRegions.map((region) => region.id));
+  const stillVisible = current.filter((region) => visibleIds.has(region.id));
+  return stillVisible.length === current.length ? current : stillVisible;
+}
+
 export function App() {
   const [settings, setSettings] = useState(initialSettings);
-  const [renderMode, setRenderMode] = useState<"3d" | "2d">("3d");
+  const [renderMode, setRenderMode] = useState<"3d" | "2d">("2d");
   const [selectedRegions, setSelectedRegions] = useState<CloudRegion[]>([]);
 
   const visibleRegions = useMemo(() => filterRegions(CLOUD_REGIONS, settings), [settings]);
 
   useEffect(() => {
-    const visibleIds = new Set(visibleRegions.map((region) => region.id));
-    setSelectedRegions((current) => {
-      const stillVisible = current.filter((region) => visibleIds.has(region.id));
-      if (stillVisible.length === current.length) return current;
-      return stillVisible.length > 0 ? stillVisible : visibleRegions.slice(0, 1);
-    });
+    setSelectedRegions((current) => keepVisibleSelection(current, visibleRegions));
   }, [visibleRegions]);
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function App() {
         </nav>
         <div className="data-date">
           <span />
-          Stand 24. August 2026
+          Stand 29. August 2026
         </div>
       </header>
 

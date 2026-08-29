@@ -1,5 +1,5 @@
 import { ChevronDown, ExternalLink, LocateFixed } from "lucide-react";
-import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
+import { PROVIDERS, PROVIDER_IDS, type CloudRegion, type ProviderId } from "../data/regions";
 import { Panel } from "./Panel";
 import { ProviderMark } from "./ProviderMark";
 
@@ -23,10 +23,43 @@ function DetailRow({ label, children, mono = false }: { label: string; children:
 }
 
 function getAvailability(region: CloudRegion) {
-  if (region.locationType === "edge-location") return "Nicht anwendbar";
+  if (region.locationType !== "cloud-region") return "Nicht anwendbar";
   if (region.zones) return `${region.zones} Zonen`;
   if (region.availabilityZones) return "Unterstützt";
   return "Nicht ausgewiesen";
+}
+
+function getLocationType(region: CloudRegion) {
+  if (region.locationType === "edge-location") return "Edge-Rechenzentrum";
+  if (region.locationType === "private-data-center") return "Privates Rechenzentrum";
+  return "Cloud-Region";
+}
+
+function getEnvironment(region: CloudRegion) {
+  if (region.scope === "sovereign") return "Sovereign Cloud";
+  if (region.provider === "cloudflare") return "Globales Anycast-Netzwerk";
+  if (region.provider === "proton") return "Private Proton-Infrastruktur";
+  return "Public Cloud";
+}
+
+function getInfrastructureModel(region: CloudRegion) {
+  if (region.infrastructureModel) return region.infrastructureModel;
+  if (region.provider === "cloudflare") return "Global verteilte Anycast-Edge-Infrastruktur";
+  return "Vom Anbieter betriebene Cloud-Infrastruktur";
+}
+
+function getServiceCoverage(region: CloudRegion) {
+  if (region.serviceCoverage) return region.serviceCoverage;
+  if (region.provider === "cloudflare") return "CDN, DNS, DDoS-Schutz und Edge-Dienste";
+  return "Compute, Speicher, Datenbanken und Netzwerkdienste";
+}
+
+function getResilience(region: CloudRegion) {
+  if (region.resilience) return region.resilience;
+  if (region.provider === "cloudflare") return "Anycast-Verteilung über das globale Cloudflare-Netzwerk";
+  if (region.zones) return `${region.zones} getrennte Verfügbarkeitszonen`;
+  if (region.availabilityZones) return "Verfügbarkeitszonen werden unterstützt";
+  return "Vom Anbieter nicht standortspezifisch ausgewiesen";
 }
 
 function RegionDetailList({ region, includeStatus = false }: { region: CloudRegion; includeStatus?: boolean }) {
@@ -41,10 +74,11 @@ function RegionDetailList({ region, includeStatus = false }: { region: CloudRegi
           {region.restricted ? " · Eingeschränkter Zugriff" : ""}
         </DetailRow>
       ) : null}
-      <DetailRow label="Standortart">{region.locationType === "edge-location" ? "Edge-Rechenzentrum" : "Cloud-Region"}</DetailRow>
-      <DetailRow label="Cloud-Umgebung">
-        {region.scope === "sovereign" ? "Sovereign Cloud" : region.provider === "cloudflare" ? "Globales Anycast-Netzwerk" : "Public Cloud"}
-      </DetailRow>
+      <DetailRow label="Standortart">{getLocationType(region)}</DetailRow>
+      <DetailRow label="Cloud-Umgebung">{getEnvironment(region)}</DetailRow>
+      <DetailRow label="Betriebsmodell">{getInfrastructureModel(region)}</DetailRow>
+      <DetailRow label="Leistungsumfang">{getServiceCoverage(region)}</DetailRow>
+      <DetailRow label="Ausfallschutz">{getResilience(region)}</DetailRow>
       {region.networkRegion ? <DetailRow label="Netzwerkregion">{NETWORK_REGION_LABELS[region.networkRegion] ?? region.networkRegion}</DetailRow> : null}
       <DetailRow label="Standort">{region.location}</DetailRow>
       <DetailRow label="Land">{region.country}</DetailRow>
@@ -52,7 +86,7 @@ function RegionDetailList({ region, includeStatus = false }: { region: CloudRegi
       <DetailRow label="Verfügbarkeitszonen">{getAvailability(region)}</DetailRow>
       <DetailRow label="Zugriff">{region.restricted ? "Eingeschränkt" : "Allgemein verfügbar"}</DetailRow>
       {region.pairedRegion ? <DetailRow label="Gepaarte Region">{region.pairedRegion}</DetailRow> : null}
-      {region.provider === "cloudflare" ? <DetailRow label="Leistungsumfang">Vollständiger Cloudflare-Service-Stack</DetailRow> : null}
+      {region.disclosureNote ? <DetailRow label="Standortoffenlegung">{region.disclosureNote}</DetailRow> : null}
       {region.trackedSince ? (
         <DetailRow label="Statussystem seit">
           {new Date(`${region.trackedSince}T00:00:00Z`).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" })}
@@ -60,7 +94,7 @@ function RegionDetailList({ region, includeStatus = false }: { region: CloudRegi
       ) : null}
       <DetailRow label="Breitengrad" mono>{region.lat.toFixed(4)}°</DetailRow>
       <DetailRow label="Längengrad" mono>{region.lng.toFixed(4)}°</DetailRow>
-      <DetailRow label="Pin-Genauigkeit">Stadt- oder Flughafenmittelpunkt</DetailRow>
+      <DetailRow label="Pin-Genauigkeit">{region.coordinateAccuracy ?? "Stadt- oder Flughafenmittelpunkt"}</DetailRow>
     </dl>
   );
 }
@@ -70,7 +104,7 @@ function RegionSourceLink({ region }: { region: CloudRegion }) {
     <a className="source-link" href={region.source} target="_blank" rel="noreferrer">
       <span>
         <small>Offizielle Quelle</small>
-        Anbieter-Dokumentation
+        {region.sourceLabel ?? "Anbieter-Dokumentation"}
       </span>
       <ExternalLink aria-hidden="true" />
     </a>
@@ -101,7 +135,7 @@ function SingleRegionDetails({ region }: { region: CloudRegion }) {
 }
 
 function GroupedRegionDetails({ regions }: { regions: CloudRegion[] }) {
-  const providerIds = (["azure", "aws", "gcp", "cloudflare"] as ProviderId[]).filter((provider) =>
+  const providerIds = (PROVIDER_IDS as ProviderId[]).filter((provider) =>
     regions.some((region) => region.provider === provider),
   );
   const locations = [...new Set(regions.map((region) => region.location))];
@@ -175,7 +209,7 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
       {regions.length === 1 ? <SingleRegionDetails region={regions[0]} /> : <GroupedRegionDetails regions={regions} />}
 
       <p className="source-note">
-        Gezeigt werden veröffentlichte Cloud-Regionen und Cloudflare-Edge-Standorte. Pins markieren Stadt- oder Flughafenmittelpunkte, keine Gebäudeadressen.
+        Gezeigt werden veröffentlichte Cloud-Regionen, Cloudflare-Edge-Standorte und Proton-Rechenzentren. Pins markieren veröffentlichte Ortsangaben oder ausdrücklich gekennzeichnete Näherungswerte, keine Gebäudeadressen.
       </p>
     </Panel>
   );

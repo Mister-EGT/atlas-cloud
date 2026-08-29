@@ -1,7 +1,7 @@
 import { LocateFixed, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
-import { Color, MeshPhongMaterial, type PerspectiveCamera } from "three";
+import { Color, MeshPhongMaterial, TOUCH, type PerspectiveCamera } from "three";
 import { PROVIDERS, type CloudRegion } from "../data/regions";
 import {
   getMarkerAriaLabel,
@@ -11,7 +11,20 @@ import {
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
+import {
+  findNearestMarkerTarget,
+  isTapGesture,
+  preventGlobePageGesture,
+  supportsMarkerPreview,
+  type PointerStart,
+} from "./touchSupport";
 import { countryFeatures } from "./worldMapData";
+
+interface MarkerInteraction {
+  marker: GlobeMarker;
+  showTooltip: (persistent?: boolean) => void;
+  hideTooltip: (clearPersistent?: boolean) => void;
+}
 
 export interface WebGLGlobeProps {
   regions: CloudRegion[];
@@ -26,6 +39,11 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const hasAppliedInitialViewRef = useRef(false);
+  const markerInteractionsRef = useRef(new WeakMap<HTMLElement, MarkerInteraction>());
+  const activeMarkerInteractionRef = useRef<MarkerInteraction | null>(null);
+  const pointerStartsRef = useRef(new Map<number, PointerStart>());
+  const hadMultipleTouchesRef = useRef(false);
+  const touchPreviewRegionIdRef = useRef<string | null>(null);
   const [size, setSize] = useState({ width: 700, height: 700 });
   const primarySelected = selectedRegions[0];
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
@@ -95,7 +113,8 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
     tooltipElement.append(providerElement, nameElement, regionList, metaElement);
     button.append(tooltipElement);
-    const showTooltip = () => {
+    const showTooltip = (persistent = false) => {
+      if (persistent) touchPreviewRegionIdRef.current = marker.regions[0].id;
       button.classList.add("is-hovered");
       const controls = globeRef.current?.controls();
       if (controls) controls.autoRotate = false;
@@ -103,22 +122,34 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
       tooltipElement.style.opacity = "1";
       tooltipElement.style.transform = "translate(-50%, 0) scale(1)";
     };
-    const hideTooltip = () => {
+    const hideTooltip = (clearPersistent = true) => {
+      if (clearPersistent && marker.regions.some((region) => region.id === touchPreviewRegionIdRef.current)) {
+        touchPreviewRegionIdRef.current = null;
+      }
       button.classList.remove("is-hovered");
       const controls = globeRef.current?.controls();
-      if (controls) controls.autoRotate = autoRotate;
+      if (controls) controls.autoRotate = autoRotate && selectedRegions.length === 0;
       tooltipElement.style.removeProperty("visibility");
       tooltipElement.style.removeProperty("opacity");
       tooltipElement.style.removeProperty("transform");
     };
-    button.addEventListener("mouseenter", showTooltip);
-    button.addEventListener("mouseleave", hideTooltip);
-    button.addEventListener("focus", showTooltip);
-    button.addEventListener("blur", hideTooltip);
+    button.addEventListener("focus", () => {
+      showTooltip();
+    });
+    button.addEventListener("blur", () => {
+      hideTooltip();
+    });
     button.addEventListener("click", (event) => {
       event.stopPropagation();
+      showTooltip();
       onSelect(marker.regions);
     });
+    const interaction = { marker, showTooltip, hideTooltip };
+    markerInteractionsRef.current.set(button, interaction);
+    if (marker.regions.some((region) => region.id === touchPreviewRegionIdRef.current)) {
+      showTooltip(true);
+      activeMarkerInteractionRef.current = interaction;
+    }
     return button;
   }, [autoRotate, onSelect, selectedRegions]);
 
@@ -134,16 +165,117 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
   }, []);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const getNearestInteraction = (clientX: number, clientY: number, pointerType: string) => {
+      const targets = [...container.querySelectorAll<HTMLElement>(".globe-html-marker")]
+        .map((element) => {
+          const interaction = markerInteractionsRef.current.get(element);
+          const rect = element.getBoundingClientRect();
+          if (!interaction || rect.width === 0 || rect.height === 0 || getComputedStyle(element).visibility === "hidden") {
+            return null;
+          }
+          return {
+            value: interaction,
+            centerX: rect.left + rect.width / 2,
+            centerY: rect.top + rect.height / 2,
+          };
+        })
+        .filter((target): target is NonNullable<typeof target> => target !== null);
+      return findNearestMarkerTarget(targets, clientX, clientY, pointerType);
+    };
+    const hideActiveTooltip = () => {
+      activeMarkerInteractionRef.current?.hideTooltip();
+      activeMarkerInteractionRef.current = null;
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      pointerStartsRef.current.set(event.pointerId, { id: event.pointerId, x: event.clientX, y: event.clientY });
+      if (event.pointerType === "touch" && [...pointerStartsRef.current.keys()].length > 1) {
+        hadMultipleTouchesRef.current = true;
+        hideActiveTooltip();
+      }
+    };
+    const handlePointerMove = (event: PointerEvent) => {
+      const start = pointerStartsRef.current.get(event.pointerId) ?? null;
+      if (event.pointerType === "touch") {
+        if (!isTapGesture(start, { id: event.pointerId, x: event.clientX, y: event.clientY }, event.pointerType)) {
+          hideActiveTooltip();
+        }
+        return;
+      }
+      if (!supportsMarkerPreview(event.pointerType)) return;
+      const nearest = getNearestInteraction(event.clientX, event.clientY, event.pointerType);
+      if (nearest === activeMarkerInteractionRef.current) return;
+      activeMarkerInteractionRef.current?.hideTooltip();
+      activeMarkerInteractionRef.current = nearest;
+      nearest?.showTooltip();
+    };
+    const handlePointerUp = (event: PointerEvent) => {
+      const start = pointerStartsRef.current.get(event.pointerId) ?? null;
+      const wasMultiTouch = event.pointerType === "touch" && hadMultipleTouchesRef.current;
+      pointerStartsRef.current.delete(event.pointerId);
+      if (pointerStartsRef.current.size === 0) hadMultipleTouchesRef.current = false;
+      if (wasMultiTouch || !isTapGesture(start, { id: event.pointerId, x: event.clientX, y: event.clientY }, event.pointerType)) {
+        return;
+      }
+      const nearest = getNearestInteraction(event.clientX, event.clientY, event.pointerType);
+      hideActiveTooltip();
+      if (!nearest) return;
+      activeMarkerInteractionRef.current = nearest;
+      nearest.showTooltip(event.pointerType === "touch");
+      onSelect(nearest.marker.regions);
+    };
+    const handlePointerCancel = (event: PointerEvent) => {
+      pointerStartsRef.current.delete(event.pointerId);
+      if (pointerStartsRef.current.size === 0) hadMultipleTouchesRef.current = false;
+    };
+    const handlePointerLeave = (event: PointerEvent) => {
+      if (supportsMarkerPreview(event.pointerType) && touchPreviewRegionIdRef.current === null) hideActiveTooltip();
+    };
+    const blockPageGesture = (event: Event) => preventGlobePageGesture(event);
+    const listenerOptions: AddEventListenerOptions = { passive: false };
+    container.addEventListener("pointerdown", handlePointerDown, true);
+    container.addEventListener("pointermove", handlePointerMove, true);
+    container.addEventListener("pointerup", handlePointerUp, true);
+    container.addEventListener("pointercancel", handlePointerCancel, true);
+    container.addEventListener("pointerleave", handlePointerLeave, true);
+    container.addEventListener("touchmove", blockPageGesture, listenerOptions);
+    container.addEventListener("gesturestart", blockPageGesture, listenerOptions);
+    container.addEventListener("gesturechange", blockPageGesture, listenerOptions);
+    return () => {
+      container.removeEventListener("pointerdown", handlePointerDown, true);
+      container.removeEventListener("pointermove", handlePointerMove, true);
+      container.removeEventListener("pointerup", handlePointerUp, true);
+      container.removeEventListener("pointercancel", handlePointerCancel, true);
+      container.removeEventListener("pointerleave", handlePointerLeave, true);
+      container.removeEventListener("touchmove", blockPageGesture, listenerOptions);
+      container.removeEventListener("gesturestart", blockPageGesture, listenerOptions);
+      container.removeEventListener("gesturechange", blockPageGesture, listenerOptions);
+    };
+  }, [onSelect]);
+
+  useEffect(() => {
+    if (!selectedRegions.some((region) => region.id === touchPreviewRegionIdRef.current)) {
+      touchPreviewRegionIdRef.current = null;
+    }
+  }, [selectedRegions]);
+
+  useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
     const controls = globe.controls();
-    controls.autoRotate = autoRotate;
+    controls.autoRotate = autoRotate && selectedRegions.length === 0;
     controls.autoRotateSpeed = 0.45;
     controls.enableDamping = true;
+    controls.enableRotate = true;
+    controls.enableZoom = true;
+    controls.enablePan = false;
     controls.dampingFactor = 0.08;
+    controls.touches.ONE = TOUCH.ROTATE;
+    controls.touches.TWO = TOUCH.DOLLY_ROTATE;
     controls.minDistance = 135;
     controls.maxDistance = 480;
-  }, [autoRotate]);
+  }, [autoRotate, selectedRegions.length]);
 
   useEffect(() => {
     if (!primarySelected || !globeRef.current) return;

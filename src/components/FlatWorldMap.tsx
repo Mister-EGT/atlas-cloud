@@ -9,6 +9,7 @@ import {
   groupRegions,
   type GlobeMarker,
 } from "./globeMarkers";
+import { isTapGesture, supportsMarkerPreview } from "./touchSupport";
 import { countryFeatureCollection, countryFeatures } from "./worldMapData";
 
 const MAP_WIDTH = 960;
@@ -19,6 +20,7 @@ const PROVIDER_DOT_POSITIONS = {
   2: [[-3.2, 0], [3.2, 0]],
   3: [[-3.7, 1.5], [0, -2.8], [3.7, 1.5]],
   4: [[-3, -3], [3, -3], [-3, 3], [3, 3]],
+  5: [[0, -3.8], [-3.8, -1], [3.8, -1], [-2.5, 3.4], [2.5, 3.4]],
 } as const;
 
 export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelect }: {
@@ -28,6 +30,8 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
   onSelect: (regions: CloudRegion[]) => void;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const lastPointerTypeRef = useRef<string | null>(null);
+  const pointerStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [hovered, setHovered] = useState<{
     marker: GlobeMarker;
@@ -70,10 +74,52 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
     setZoom((current) => Math.min(2.2, Math.max(1, current + (direction === "in" ? 0.25 : -0.25))));
   };
 
+  const selectNearestMarker = (
+    clientX: number,
+    clientY: number,
+    pointerType: string,
+    svg: SVGSVGElement,
+  ) => {
+    const maxDistance = pointerType === "touch" ? 44 : pointerType === "pen" ? 32 : 22;
+
+    let nearest: { marker: GlobeMarker; distance: number } | undefined;
+    for (const element of svg.querySelectorAll<SVGGElement>(".flat-map__marker[data-marker-index]")) {
+      const index = Number(element.dataset.markerIndex);
+      const projected = projectedMarkers[index];
+      if (!projected?.point) continue;
+      const rect = element.getBoundingClientRect();
+      const distance = Math.hypot(rect.left + rect.width / 2 - clientX, rect.top + rect.height / 2 - clientY);
+      if (!nearest || distance < nearest.distance) nearest = { marker: projected.marker, distance };
+    }
+
+    if (nearest && nearest.distance <= maxDistance) onSelect(nearest.marker.regions);
+  };
+
   return (
     <div className="flat-map" data-render-mode="2d" ref={mapRef}>
       <div className="flat-map__badge" role="status">2D-Kompatibilitätsansicht</div>
-      <svg className="flat-map__svg" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Standorte">
+      <svg
+        className="flat-map__svg"
+        viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+        role="img"
+        aria-label="Interaktive zweidimensionale Weltkarte der Cloud-Standorte"
+        onPointerDown={(event) => {
+          pointerStartRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        }}
+        onPointerUp={(event) => {
+          const start = pointerStartRef.current;
+          pointerStartRef.current = null;
+          if (isTapGesture(start, { id: event.pointerId, x: event.clientX, y: event.clientY }, event.pointerType)) {
+            selectNearestMarker(event.clientX, event.clientY, event.pointerType, event.currentTarget);
+          }
+          setHovered(null);
+        }}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
+          lastPointerTypeRef.current = null;
+          setHovered(null);
+        }}
+      >
         <defs>
           <radialGradient id="flat-ocean" cx="50%" cy="42%" r="68%">
             <stop offset="0" stopColor="#18324a" />
@@ -86,28 +132,49 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
         <rect x="18" y="20" width="924" height="520" rx="70" fill="url(#flat-ocean)" filter="url(#flat-map-shadow)" />
         <g className="flat-map__content" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
           {countryPaths.map((countryPath, index) => <path key={index} d={countryPath} />)}
-          {projectedMarkers.map(({ marker, point }) => {
+          {projectedMarkers.map(({ marker, point }, markerIndex) => {
             if (!point) return null;
             const providerStates = getMarkerProviderStates(marker);
             const isSelected = selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id));
-            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4];
+            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4 | 5];
             const isCluster = marker.regions.length > 1;
             return (
               <g
                 key={marker.regions.map((region) => region.id).join(":")}
                 className={`flat-map__marker ${isSelected ? "is-selected" : ""}`}
                 data-region-codes={marker.regions.map((region) => region.code ?? region.id).join(" ")}
+                data-marker-index={markerIndex}
                 data-provider-count={marker.providers.length}
                 data-marker-status={marker.status}
                 role="button"
                 tabIndex={0}
                 aria-label={getMarkerAriaLabel(marker)}
                 transform={`translate(${point[0]} ${point[1]})`}
-                onMouseEnter={(event) => showTooltip(marker, event.currentTarget)}
-                onMouseLeave={() => setHovered(null)}
-                onFocus={(event) => showTooltip(marker, event.currentTarget)}
-                onBlur={() => setHovered(null)}
-                onClick={() => onSelect(marker.regions)}
+                onPointerDown={(event) => {
+                  lastPointerTypeRef.current = event.pointerType;
+                }}
+                onPointerEnter={(event) => {
+                  if (supportsMarkerPreview(event.pointerType)) showTooltip(marker, event.currentTarget);
+                }}
+                onPointerLeave={(event) => {
+                  if (supportsMarkerPreview(event.pointerType)) setHovered(null);
+                }}
+                onFocus={(event) => {
+                  if (lastPointerTypeRef.current !== "touch") showTooltip(marker, event.currentTarget);
+                }}
+                onBlur={() => {
+                  lastPointerTypeRef.current = null;
+                  setHovered(null);
+                }}
+                onClick={() => {
+                  setHovered(null);
+                  if (lastPointerTypeRef.current) {
+                    lastPointerTypeRef.current = null;
+                    return;
+                  }
+                  lastPointerTypeRef.current = null;
+                  onSelect(marker.regions);
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -115,6 +182,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                   }
                 }}
               >
+                <circle className="flat-map__marker-hit-area" r="9" />
                 {isSelected ? <circle className="flat-map__selection" r={isCluster ? 12 : 10} /> : null}
                 {isCluster ? <circle className="flat-map__cluster-shell" r="8.25" /> : null}
                 {providerStates.map((providerState, index) => {

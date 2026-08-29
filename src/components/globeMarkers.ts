@@ -1,6 +1,6 @@
-import { PROVIDERS, type CloudRegion, type ProviderId } from "../data/regions";
+import { PROVIDERS, PROVIDER_IDS, type CloudRegion, type ProviderId } from "../data/regions";
 
-const PROVIDER_ORDER: ProviderId[] = ["azure", "aws", "gcp", "cloudflare"];
+const PROVIDER_ORDER: ProviderId[] = PROVIDER_IDS;
 const CLUSTER_DISTANCE_KM = 45;
 
 export interface MarkerProviderState {

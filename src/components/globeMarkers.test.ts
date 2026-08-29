@@ -29,6 +29,15 @@ describe("globe marker groups", () => {
     expect(markers[0].providers).toEqual(["gcp", "cloudflare"]);
   });
 
+  it("supports a shared marker containing all five providers", () => {
+    const frankfurt = groupRegions(CLOUD_REGIONS, true).find((marker) =>
+      marker.regions.some((region) => region.id === "proton-rechenzentrum-frankfurt"),
+    );
+
+    expect(frankfurt?.providers).toEqual(["azure", "aws", "gcp", "cloudflare", "proton"]);
+    expect(getMarkerAriaLabel(frankfurt!)).toContain("Proton");
+  });
+
   it("keeps regions separate when grouping is disabled", () => {
     const santiagoRegions = CLOUD_REGIONS.filter((region) =>
       Math.abs(region.lat + 33.4489) < 0.01 && Math.abs(region.lng + 70.6693) < 0.01,
