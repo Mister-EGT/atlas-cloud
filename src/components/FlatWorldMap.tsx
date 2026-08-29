@@ -23,6 +23,25 @@ const PROVIDER_DOT_POSITIONS = {
   5: [[0, -3.8], [-3.8, -1], [3.8, -1], [-2.5, 3.4], [2.5, 3.4]],
 } as const;
 
+export function getProviderDotLayout(providerCount: number) {
+  const preset = PROVIDER_DOT_POSITIONS[providerCount as keyof typeof PROVIDER_DOT_POSITIONS];
+  if (preset) return { positions: preset as readonly (readonly [number, number])[], radius: 3.25 };
+
+  const hasCenter = providerCount >= 9;
+  const ringCount = hasCenter ? providerCount - 1 : providerCount;
+  const ringRadius = hasCenter ? 5.4 : 4.8;
+  const positions: [number, number][] = hasCenter ? [[0, 0]] : [];
+  for (let index = 0; index < ringCount; index += 1) {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / ringCount;
+    positions.push([
+      Number((Math.cos(angle) * ringRadius).toFixed(3)),
+      Number((Math.sin(angle) * ringRadius).toFixed(3)),
+    ]);
+  }
+
+  return { positions, radius: hasCenter ? 1.9 : 2.45 };
+}
+
 export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelect }: {
   regions: CloudRegion[];
   selectedRegions: CloudRegion[];
@@ -136,7 +155,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
             if (!point) return null;
             const providerStates = getMarkerProviderStates(marker);
             const isSelected = selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id));
-            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4 | 5];
+            const dotLayout = getProviderDotLayout(providerStates.length);
             const isCluster = marker.regions.length > 1;
             return (
               <g
@@ -186,7 +205,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                 {isSelected ? <circle className="flat-map__selection" r={isCluster ? 12 : 10} /> : null}
                 {isCluster ? <circle className="flat-map__cluster-shell" r="8.25" /> : null}
                 {providerStates.map((providerState, index) => {
-                  const [cx, cy] = dotPositions[index];
+                  const [cx, cy] = dotLayout.positions[index];
                   const color = PROVIDERS[providerState.provider].color;
                   return (
                     <circle
@@ -194,7 +213,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
                       className={`flat-map__provider-dot is-${providerState.status}`}
                       cx={cx}
                       cy={cy}
-                      r={isCluster ? 3.25 : 5.25}
+                      r={isCluster ? dotLayout.radius : 5.25}
                       fill={providerState.status === "planned" ? "#fff" : color}
                       stroke={providerState.status === "planned" ? color : "#fff"}
                     />
