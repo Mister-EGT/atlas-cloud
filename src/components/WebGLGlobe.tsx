@@ -1,7 +1,7 @@
 import { LocateFixed, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
-import { Color, MeshPhongMaterial, type PerspectiveCamera } from "three";
+import { Color, MeshPhongMaterial, TOUCH, type PerspectiveCamera } from "three";
 import { PROVIDERS, type CloudRegion } from "../data/regions";
 import {
   getMarkerAriaLabel,
@@ -11,7 +11,7 @@ import {
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
-import { supportsMarkerPreview } from "./touchSupport";
+import { preventGlobePageGesture, supportsMarkerPreview } from "./touchSupport";
 import { countryFeatures } from "./worldMapData";
 
 export interface WebGLGlobeProps {
@@ -150,13 +150,33 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
   }, []);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const blockPageGesture = (event: Event) => preventGlobePageGesture(event);
+    const listenerOptions: AddEventListenerOptions = { passive: false };
+    container.addEventListener("touchmove", blockPageGesture, listenerOptions);
+    container.addEventListener("gesturestart", blockPageGesture, listenerOptions);
+    container.addEventListener("gesturechange", blockPageGesture, listenerOptions);
+    return () => {
+      container.removeEventListener("touchmove", blockPageGesture, listenerOptions);
+      container.removeEventListener("gesturestart", blockPageGesture, listenerOptions);
+      container.removeEventListener("gesturechange", blockPageGesture, listenerOptions);
+    };
+  }, []);
+
+  useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
     const controls = globe.controls();
     controls.autoRotate = autoRotate && selectedRegions.length === 0;
     controls.autoRotateSpeed = 0.45;
     controls.enableDamping = true;
+    controls.enableRotate = true;
+    controls.enableZoom = true;
+    controls.enablePan = false;
     controls.dampingFactor = 0.08;
+    controls.touches.ONE = TOUCH.ROTATE;
+    controls.touches.TWO = TOUCH.DOLLY_ROTATE;
     controls.minDistance = 135;
     controls.maxDistance = 480;
   }, [autoRotate, selectedRegions.length]);

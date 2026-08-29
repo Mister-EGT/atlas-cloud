@@ -1,6 +1,6 @@
 import { CLOUDFLARE_LOCATION_INPUTS } from "./cloudflareLocations";
 
-export type ProviderId = "azure" | "aws" | "gcp" | "cloudflare";
+export type ProviderId = "azure" | "aws" | "gcp" | "cloudflare" | "proton";
 export type Continent =
   | "Afrika"
   | "Asien"
@@ -25,9 +25,15 @@ export interface CloudRegion {
   status: "active" | "planned";
   scope: "standard" | "sovereign";
   restricted?: boolean;
-  locationType: "cloud-region" | "edge-location";
+  locationType: "cloud-region" | "edge-location" | "private-data-center";
   networkRegion?: string;
   trackedSince?: string;
+  infrastructureModel?: string;
+  serviceCoverage?: string;
+  resilience?: string;
+  coordinateAccuracy?: string;
+  disclosureNote?: string;
+  sourceLabel?: string;
   source: string;
 }
 
@@ -52,7 +58,14 @@ export const PROVIDERS = {
     shortName: "Cloudflare",
     color: "#f6821f",
   },
+  proton: {
+    name: "Proton",
+    shortName: "Proton",
+    color: "#6d4aff",
+  },
 } as const;
+
+export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
 
 const AZURE_SOURCE = "https://learn.microsoft.com/azure/reliability/regions-list";
 const AZURE_CHINA_SOURCE = "https://learn.microsoft.com/azure/china/overview-regions";
@@ -63,6 +76,9 @@ const AWS_INFRA_SOURCE = "https://aws.amazon.com/about-aws/global-infrastructure
 const AWS_EU_SOVEREIGN_SOURCE = "https://aws.amazon.com/blogs/aws/opening-the-aws-european-sovereign-cloud/";
 const GCP_SOURCE = "https://cloud.google.com/about/locations";
 const CLOUDFLARE_SOURCE = "https://www.cloudflarestatus.com/";
+const PROTON_INFRASTRUCTURE_SOURCE = "https://proton.me/blog/sustaining-mission-over-time";
+const PROTON_ZURICH_SOURCE = "https://proton.me/support/who-owns-protonmail";
+const PROTON_FRANKFURT_SOURCE = "https://proton.me/blog/crv-investment-other-news";
 
 type RegionInput = Omit<CloudRegion, "id" | "provider" | "status" | "scope" | "source" | "locationType"> & {
   status?: CloudRegion["status"];
@@ -79,7 +95,15 @@ export type CloudflareLocationInput = Pick<
 function makeRegion(provider: ProviderId, input: RegionInput): CloudRegion {
   const source =
     input.source ??
-    (provider === "azure" ? AZURE_SOURCE : provider === "aws" ? AWS_SOURCE : GCP_SOURCE);
+    (provider === "azure"
+      ? AZURE_SOURCE
+      : provider === "aws"
+        ? AWS_SOURCE
+        : provider === "gcp"
+          ? GCP_SOURCE
+          : provider === "cloudflare"
+            ? CLOUDFLARE_SOURCE
+            : PROTON_INFRASTRUCTURE_SOURCE);
   const stableCode = input.code ?? input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
   return {
@@ -102,6 +126,15 @@ const cloudflare = (input: CloudflareLocationInput) => makeRegion("cloudflare", 
   availabilityZones: false,
   locationType: "edge-location",
   source: CLOUDFLARE_SOURCE,
+});
+const proton = (input: RegionInput) => makeRegion("proton", {
+  ...input,
+  availabilityZones: false,
+  locationType: "private-data-center",
+  infrastructureModel: "Eigene Server, eigenes Netzwerk und eigener ISP-Betrieb",
+  serviceCoverage: "Verschlüsselte Proton-Dienste und Speicherinfrastruktur",
+  resilience: "Geografisch verteilte und standortübergreifend redundante Infrastruktur",
+  sourceLabel: "Offizielle Proton-Dokumentation",
 });
 
 export const AZURE_REGIONS: CloudRegion[] = [
@@ -267,11 +300,51 @@ export const GCP_REGIONS: CloudRegion[] = [
 
 export const CLOUDFLARE_REGIONS: CloudRegion[] = CLOUDFLARE_LOCATION_INPUTS.map(cloudflare);
 
+export const PROTON_REGIONS: CloudRegion[] = [
+  proton({
+    name: "Primäres Rechenzentrum Zürich",
+    code: null,
+    location: "Zürich",
+    country: "Schweiz",
+    continent: "Europa",
+    lat: 47.3769,
+    lng: 8.5417,
+    coordinateAccuracy: "Stadtmittelpunkt, keine Gebäudeadresse",
+    disclosureNote: "Proton veröffentlicht Zürich als Standort seines primären Rechenzentrums.",
+    source: PROTON_ZURICH_SOURCE,
+  }),
+  proton({
+    name: "Rechenzentrum Frankfurt",
+    code: null,
+    location: "Frankfurt am Main",
+    country: "Deutschland",
+    continent: "Europa",
+    lat: 50.1109,
+    lng: 8.6821,
+    coordinateAccuracy: "Stadtmittelpunkt, keine Gebäudeadresse",
+    disclosureNote: "Proton nennt Frankfurt neben dem DE-CIX, veröffentlicht aber keine Gebäudeadresse.",
+    source: PROTON_FRANKFURT_SOURCE,
+  }),
+  proton({
+    name: "Rechenzentrum Norwegen",
+    code: null,
+    location: "Norwegen, Ort nicht veröffentlicht",
+    country: "Norwegen",
+    continent: "Europa",
+    lat: 64.5,
+    lng: 11.5,
+    coordinateAccuracy: "Landesmittelpunkt, genauer Ort nicht veröffentlicht",
+    disclosureNote: "Proton bestätigt ein Rechenzentrum in Norwegen, nennt jedoch keinen konkreten Ort.",
+    source: PROTON_INFRASTRUCTURE_SOURCE,
+  }),
+];
+
 export const CLOUD_REGIONS: CloudRegion[] = [
   ...AZURE_REGIONS,
   ...AWS_REGIONS,
   ...GCP_REGIONS,
   ...CLOUDFLARE_REGIONS,
+  ...PROTON_REGIONS,
 ];
 
 export const CONTINENTS: Continent[] = [

@@ -6,7 +6,7 @@ import { SettingsPanel, type ViewSettings } from "./components/SettingsPanel";
 import { CLOUD_REGIONS, type CloudRegion } from "./data/regions";
 
 const initialSettings: ViewSettings = {
-  providers: { azure: true, aws: true, gcp: true, cloudflare: true },
+  providers: { azure: true, aws: true, gcp: true, cloudflare: true, proton: true },
   status: "all",
   continent: "all",
   clusterMarkers: true,
@@ -70,7 +70,7 @@ export function App() {
         </nav>
         <div className="data-date">
           <span />
-          Stand 24. August 2026
+          Stand 29. August 2026
         </div>
       </header>
 

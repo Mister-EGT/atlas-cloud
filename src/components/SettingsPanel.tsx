@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import {
   CLOUD_REGIONS,
   CONTINENTS,
+  PROVIDER_IDS,
   PROVIDERS,
   type CloudRegion,
   type Continent,
@@ -68,7 +69,7 @@ export function SettingsPanel({
     ).slice(0, 7);
   }, [query]);
 
-  const providerIds: ProviderId[] = ["azure", "aws", "gcp", "cloudflare"];
+  const providerIds: ProviderId[] = PROVIDER_IDS;
 
   return (
     <Panel title="Ansicht" className="settings-panel">
@@ -111,7 +112,7 @@ export function SettingsPanel({
             <div className="provider-row" key={providerId}>
               <ProviderMark provider={providerId} compact />
               <span>{PROVIDERS[providerId].shortName}</span>
-              <small>{count} {providerId === "cloudflare" ? "Edge-Standorte" : "Regionen"}</small>
+              <small>{count} {providerId === "cloudflare" ? "Edge-Standorte" : providerId === "proton" ? "Rechenzentren" : "Regionen"}</small>
               <Toggle
                 label={`${PROVIDERS[providerId].shortName} anzeigen`}
                 checked={settings.providers[providerId]}

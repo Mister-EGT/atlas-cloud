@@ -20,6 +20,7 @@ const PROVIDER_DOT_POSITIONS = {
   2: [[-3.2, 0], [3.2, 0]],
   3: [[-3.7, 1.5], [0, -2.8], [3.7, 1.5]],
   4: [[-3, -3], [3, -3], [-3, 3], [3, 3]],
+  5: [[0, -3.8], [-3.8, -1], [3.8, -1], [-2.5, 3.4], [2.5, 3.4]],
 } as const;
 
 export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelect }: {
@@ -135,7 +136,7 @@ export function FlatWorldMap({ regions, selectedRegions, clusterMarkers, onSelec
             if (!point) return null;
             const providerStates = getMarkerProviderStates(marker);
             const isSelected = selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id));
-            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4];
+            const dotPositions = PROVIDER_DOT_POSITIONS[providerStates.length as 1 | 2 | 3 | 4 | 5];
             const isCluster = marker.regions.length > 1;
             return (
               <g

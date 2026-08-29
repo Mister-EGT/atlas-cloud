@@ -127,8 +127,8 @@ export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mod
 
       {renderMode === "3d" ? (
         <div className="globe-help" aria-hidden="true">
-          <span>Ziehen zum Drehen</span>
-          <span>Scrollen zum Zoomen</span>
+          <span>Ziehen oder wischen zum Drehen</span>
+          <span>Scrollen oder zwei Finger zum Zoomen</span>
           <span>Marker anklicken</span>
         </div>
       ) : null}

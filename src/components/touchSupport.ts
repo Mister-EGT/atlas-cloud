@@ -2,6 +2,10 @@ export function supportsMarkerPreview(pointerType: string) {
   return pointerType !== "touch";
 }
 
+export function preventGlobePageGesture(event: Pick<Event, "preventDefault">) {
+  event.preventDefault();
+}
+
 export interface PointerStart {
   id: number;
   x: number;

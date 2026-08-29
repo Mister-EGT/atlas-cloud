@@ -21,7 +21,18 @@ describe("grouped location details", () => {
     expect(html).toContain("Details zu Chile von Amazon Web Services anzeigen");
     expect(html).toContain("Details zu Santiago von Google Cloud anzeigen");
     expect(html).toContain("Details zu Santiago Edge von Cloudflare anzeigen");
-    expect(html).toContain("Vollständiger Cloudflare-Service-Stack");
+    expect(html).toContain("CDN, DNS, DDoS-Schutz und Edge-Dienste");
     expect(html).toContain("Code noch nicht veröffentlicht");
+  });
+
+  it("shows the published Proton infrastructure details and disclosure precision", () => {
+    const norway = CLOUD_REGIONS.find((region) => region.id === "proton-rechenzentrum-norwegen")!;
+    const html = renderToStaticMarkup(<DetailPanel regions={[norway]} />);
+
+    expect(html).toContain("Privates Rechenzentrum");
+    expect(html).toContain("Eigene Server, eigenes Netzwerk und eigener ISP-Betrieb");
+    expect(html).toContain("Geografisch verteilte und standortübergreifend redundante Infrastruktur");
+    expect(html).toContain("Landesmittelpunkt, genauer Ort nicht veröffentlicht");
+    expect(html).toContain("Proton bestätigt ein Rechenzentrum in Norwegen");
   });
 });
