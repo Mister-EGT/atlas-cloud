@@ -344,26 +344,6 @@ button {
   width: 22px;
 }
 
-.provider-mark__monogram {
-  display: inline-grid;
-  width: 31px;
-  height: 31px;
-  place-items: center;
-  border-radius: 9px 14px 9px 14px;
-  background: linear-gradient(145deg, #8b6cff, #5c3cf0);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 750;
-  line-height: 1;
-}
-
-.provider-mark.is-compact .provider-mark__monogram {
-  width: 21px;
-  height: 21px;
-  border-radius: 6px 9px 6px 9px;
-  font-size: 12px;
-}
-
 .status-line {
   display: flex;
   min-height: 28px;
