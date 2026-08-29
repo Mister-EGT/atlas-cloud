@@ -269,6 +269,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     const selectionChanged = markerSelectionEnabledRef.current !== state.selectable;
     markerSelectionEnabledRef.current = state.selectable;
     container.style.setProperty("--globe-marker-scale", state.scale.toFixed(3));
+    container.dataset.markerScale = state.scale.toFixed(3);
     container.dataset.markerSelection = state.selectable ? "enabled" : "locked";
     if (!selectionChanged) return;
     container.querySelectorAll<HTMLElement>(".globe-html-marker").forEach((element) => {

@@ -645,7 +645,7 @@ button {
 .globe-stage__canvas {
   position: absolute;
   inset: 0;
-  --globe-marker-scale: 0.58;
+  --globe-marker-scale: 0.46;
 }
 
 .globe-stage__canvas[data-marker-selection="locked"]::after {
