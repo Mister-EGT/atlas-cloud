@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isTapGesture, preventGlobePageGesture, supportsMarkerPreview } from "./touchSupport";
+import {
+  findNearestMarkerTarget,
+  getMarkerHitRadius,
+  isTapGesture,
+  preventGlobePageGesture,
+  supportsMarkerPreview,
+} from "./touchSupport";
 
 describe("marker previews", () => {
   it("does not leave hover previews open after a touch", () => {
@@ -31,5 +37,25 @@ describe("marker previews", () => {
     preventGlobePageGesture({ preventDefault: () => { prevented = true; } });
 
     expect(prevented).toBe(true);
+  });
+
+  it("finds a touched marker without making the marker intercept the gesture", () => {
+    const markers = [
+      { value: "frankfurt", centerX: 100, centerY: 100 },
+      { value: "zurich", centerX: 180, centerY: 100 },
+    ];
+
+    expect(getMarkerHitRadius("touch")).toBe(44);
+    expect(findNearestMarkerTarget(markers, 130, 105, "touch")).toBe("frankfurt");
+    expect(findNearestMarkerTarget(markers, 140, 100, "mouse")).toBeNull();
+  });
+
+  it("selects the nearest marker when touch hit areas overlap", () => {
+    const markers = [
+      { value: "first", centerX: 100, centerY: 100 },
+      { value: "nearest", centerX: 116, centerY: 100 },
+    ];
+
+    expect(findNearestMarkerTarget(markers, 113, 100, "touch")).toBe("nearest");
   });
 });
