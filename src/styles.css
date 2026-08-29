@@ -656,6 +656,38 @@ button {
   font-size: 12px;
 }
 
+.globe-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  width: min(300px, calc(100% - 40px));
+  transform: translate(-50%, -50%);
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: var(--shadow-floating);
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+}
+
+.globe-empty-state strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.globe-empty-state span {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .globe-mode-switch {
   position: absolute;
   top: 15px;

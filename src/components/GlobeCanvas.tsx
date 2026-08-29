@@ -87,6 +87,13 @@ export function GlobeCanvas(props: WebGLGlobeProps & { onRenderModeChange?: (mod
         </WebGLErrorBoundary>
       ) : fallback}
 
+      {props.regions.length === 0 ? (
+        <div className="globe-empty-state" role="status">
+          <strong>Keine Standorte sichtbar</strong>
+          <span>Passe Status, Kontinent oder Anbieterfilter an.</span>
+        </div>
+      ) : null}
+
       <div className="globe-mode-switch" role="group" aria-label="Kartendarstellung">
         <button
           type="button"
