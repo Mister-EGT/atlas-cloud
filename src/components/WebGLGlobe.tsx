@@ -11,6 +11,7 @@ import {
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
+import { supportsMarkerPreview } from "./touchSupport";
 import { countryFeatures } from "./worldMapData";
 
 export interface WebGLGlobeProps {
@@ -95,6 +96,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
     tooltipElement.append(providerElement, nameElement, regionList, metaElement);
     button.append(tooltipElement);
+    let lastPointerType: string | null = null;
     const showTooltip = () => {
       button.classList.add("is-hovered");
       const controls = globeRef.current?.controls();
@@ -106,17 +108,31 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     const hideTooltip = () => {
       button.classList.remove("is-hovered");
       const controls = globeRef.current?.controls();
-      if (controls) controls.autoRotate = autoRotate;
+      if (controls) controls.autoRotate = autoRotate && selectedRegions.length === 0;
       tooltipElement.style.removeProperty("visibility");
       tooltipElement.style.removeProperty("opacity");
       tooltipElement.style.removeProperty("transform");
     };
-    button.addEventListener("mouseenter", showTooltip);
-    button.addEventListener("mouseleave", hideTooltip);
-    button.addEventListener("focus", showTooltip);
-    button.addEventListener("blur", hideTooltip);
+    button.addEventListener("pointerdown", (event) => {
+      lastPointerType = event.pointerType;
+    });
+    button.addEventListener("pointerenter", (event) => {
+      if (supportsMarkerPreview(event.pointerType)) showTooltip();
+    });
+    button.addEventListener("pointerleave", (event) => {
+      if (supportsMarkerPreview(event.pointerType)) hideTooltip();
+    });
+    button.addEventListener("focus", () => {
+      if (lastPointerType !== "touch") showTooltip();
+    });
+    button.addEventListener("blur", () => {
+      lastPointerType = null;
+      hideTooltip();
+    });
     button.addEventListener("click", (event) => {
       event.stopPropagation();
+      hideTooltip();
+      lastPointerType = null;
       onSelect(marker.regions);
     });
     return button;
@@ -137,13 +153,13 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     const globe = globeRef.current;
     if (!globe) return;
     const controls = globe.controls();
-    controls.autoRotate = autoRotate;
+    controls.autoRotate = autoRotate && selectedRegions.length === 0;
     controls.autoRotateSpeed = 0.45;
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 135;
     controls.maxDistance = 480;
-  }, [autoRotate]);
+  }, [autoRotate, selectedRegions.length]);
 
   useEffect(() => {
     if (!primarySelected || !globeRef.current) return;

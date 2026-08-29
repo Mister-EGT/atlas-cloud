@@ -176,6 +176,21 @@ button {
   padding: 14px;
 }
 
+@media (min-width: 761px) {
+  .detail-panel,
+  .globe-stage {
+    height: calc(100vh - 84px);
+    align-self: start;
+  }
+}
+
+@media (min-width: 1121px) {
+  .settings-panel {
+    height: calc(100vh - 84px);
+    align-self: start;
+  }
+}
+
 .panel {
   display: flex;
   min-width: 0;
@@ -216,6 +231,8 @@ button {
   corner-shape: squircle;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 18%, transparent) transparent;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .detail-panel .panel__inset,
@@ -639,6 +656,42 @@ button {
   font-size: 12px;
 }
 
+.globe-mode-switch {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 6;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: var(--shadow-resting);
+  backdrop-filter: blur(8px);
+}
+
+.globe-mode-switch button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.globe-mode-switch button.is-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.globe-mode-switch button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
 .flat-map {
   position: absolute;
   inset: 0;
@@ -665,6 +718,11 @@ button {
 .flat-map__marker {
   cursor: pointer;
   outline: none;
+}
+
+.flat-map__marker-hit-area {
+  fill: transparent;
+  pointer-events: all;
 }
 
 .flat-map__provider-dot {
@@ -841,6 +899,7 @@ button {
 .globe-stage__canvas canvas {
   display: block;
   cursor: grab;
+  touch-action: none;
 }
 
 .globe-stage__canvas canvas:active {
@@ -960,6 +1019,13 @@ button {
   transition: box-shadow 0.16s ease-out;
 }
 
+.globe-html-marker::before {
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  content: "";
+}
+
 .globe-html-marker__dot {
   display: block;
   width: 10px;
@@ -977,14 +1043,13 @@ button {
   outline: 1px solid #fff;
 }
 
-.globe-html-marker:hover,
 .globe-html-marker.is-hovered,
 .globe-html-marker:focus-visible {
   z-index: 2147483647 !important;
   outline: 0;
 }
 
-.globe-html-marker:hover .globe-html-marker__dot,
+.globe-html-marker.is-hovered .globe-html-marker__dot,
 .globe-html-marker:focus-visible .globe-html-marker__dot {
   box-shadow: 0 0 0 3px rgb(255 255 255 / 28%), 0 2px 8px rgb(3 14 25 / 58%);
 }
@@ -1017,7 +1082,6 @@ button {
   corner-shape: squircle;
 }
 
-.globe-html-marker:hover .globe-html-marker__tooltip,
 .globe-html-marker.is-hovered .globe-html-marker__tooltip,
 .globe-html-marker:focus-visible .globe-html-marker__tooltip {
   visibility: visible;
@@ -1561,6 +1625,10 @@ button {
     display: none;
   }
 
+  .flat-map__badge {
+    display: none;
+  }
+
   .globe-legend {
     right: 58px;
     bottom: 10px;
@@ -1574,6 +1642,72 @@ button {
   .globe-controls {
     right: 9px;
     bottom: 9px;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  button,
+  a,
+  select,
+  summary {
+    touch-action: manipulation;
+  }
+
+  .globe-mode-switch button {
+    min-height: 44px;
+    padding-inline: 14px;
+    font-size: 11px;
+  }
+
+  .globe-controls button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .globe-controls svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .flat-map__marker-hit-area {
+    r: 38px;
+  }
+
+  .globe-html-marker::before {
+    inset: -17px;
+  }
+
+  .search-control,
+  .search-results button,
+  .segmented button,
+  .select-wrap select,
+  .source-link {
+    min-height: 44px;
+  }
+
+  .toggle {
+    width: 44px;
+    height: 28px;
+  }
+
+  .toggle span {
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .toggle.is-on span {
+    transform: translateX(16px);
+  }
+
+  .flat-map__marker:active .flat-map__provider-dot,
+  .globe-html-marker:active .globe-html-marker__dot,
+  .globe-controls button:active,
+  .segmented button:active,
+  .search-results button:active,
+  .source-link:active {
+    filter: brightness(0.92);
   }
 }
 
