@@ -29,12 +29,22 @@ describe("globe marker groups", () => {
     expect(markers[0].providers).toEqual(["gcp", "cloudflare"]);
   });
 
-  it("supports a shared marker containing all five providers", () => {
+  it("supports a shared marker containing all providers located around Frankfurt", () => {
     const frankfurt = groupRegions(CLOUD_REGIONS, true).find((marker) =>
       marker.regions.some((region) => region.id === "proton-rechenzentrum-frankfurt"),
     );
 
-    expect(frankfurt?.providers).toEqual(["azure", "aws", "gcp", "cloudflare", "proton"]);
+    expect(frankfurt?.providers).toEqual([
+      "azure",
+      "aws",
+      "gcp",
+      "cloudflare",
+      "proton",
+      "oracle",
+      "ibm",
+      "digitalocean",
+      "akamai",
+    ]);
     expect(getMarkerAriaLabel(frankfurt!)).toContain("Proton");
   });
 

@@ -1,6 +1,25 @@
 import { CLOUDFLARE_LOCATION_INPUTS } from "./cloudflareLocations";
+import {
+  AKAMAI_REGIONS,
+  DIGITALOCEAN_REGIONS,
+  HETZNER_REGIONS,
+  IBM_REGIONS,
+  ORACLE_REGIONS,
+  OVHCLOUD_REGIONS,
+} from "./additionalProviderRegions";
 
-export type ProviderId = "azure" | "aws" | "gcp" | "cloudflare" | "proton";
+export type ProviderId =
+  | "azure"
+  | "aws"
+  | "gcp"
+  | "cloudflare"
+  | "proton"
+  | "hetzner"
+  | "ovhcloud"
+  | "oracle"
+  | "ibm"
+  | "digitalocean"
+  | "akamai";
 export type Continent =
   | "Afrika"
   | "Asien"
@@ -25,7 +44,7 @@ export interface CloudRegion {
   status: "active" | "planned";
   scope: "standard" | "sovereign";
   restricted?: boolean;
-  locationType: "cloud-region" | "edge-location" | "private-data-center";
+  locationType: "cloud-region" | "local-zone" | "edge-location" | "private-data-center";
   networkRegion?: string;
   trackedSince?: string;
   infrastructureModel?: string;
@@ -62,6 +81,36 @@ export const PROVIDERS = {
     name: "Proton",
     shortName: "Proton",
     color: "#6d4aff",
+  },
+  hetzner: {
+    name: "Hetzner Cloud",
+    shortName: "Hetzner",
+    color: "#d50c2d",
+  },
+  ovhcloud: {
+    name: "OVHcloud",
+    shortName: "OVHcloud",
+    color: "#000e9c",
+  },
+  oracle: {
+    name: "Oracle Cloud Infrastructure",
+    shortName: "Oracle Cloud",
+    color: "#c74634",
+  },
+  ibm: {
+    name: "IBM Cloud",
+    shortName: "IBM Cloud",
+    color: "#0f62fe",
+  },
+  digitalocean: {
+    name: "DigitalOcean",
+    shortName: "DigitalOcean",
+    color: "#0080ff",
+  },
+  akamai: {
+    name: "Akamai Cloud",
+    shortName: "Akamai Cloud",
+    color: "#009cde",
   },
 } as const;
 
@@ -345,7 +394,22 @@ export const CLOUD_REGIONS: CloudRegion[] = [
   ...GCP_REGIONS,
   ...CLOUDFLARE_REGIONS,
   ...PROTON_REGIONS,
+  ...HETZNER_REGIONS,
+  ...OVHCLOUD_REGIONS,
+  ...ORACLE_REGIONS,
+  ...IBM_REGIONS,
+  ...DIGITALOCEAN_REGIONS,
+  ...AKAMAI_REGIONS,
 ];
+
+export {
+  AKAMAI_REGIONS,
+  DIGITALOCEAN_REGIONS,
+  HETZNER_REGIONS,
+  IBM_REGIONS,
+  ORACLE_REGIONS,
+  OVHCLOUD_REGIONS,
+};
 
 export const CONTINENTS: Continent[] = [
   "Afrika",
