@@ -1340,10 +1340,8 @@ button {
 
 .provider-row > span:nth-child(2) {
   min-width: 0;
-  overflow: hidden;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .provider-row small {
