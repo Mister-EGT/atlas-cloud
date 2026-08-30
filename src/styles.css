@@ -1326,9 +1326,9 @@ button {
 
 .provider-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  grid-template-columns: 28px minmax(70px, 1fr) minmax(64px, 92px) auto;
   gap: 7px;
-  min-height: 49px;
+  min-height: 54px;
   align-items: center;
   padding: 0 10px;
   border-bottom: 1px solid var(--border);
@@ -1350,6 +1350,8 @@ button {
   color: var(--muted-foreground);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: right;
 }
 
 .toggle {

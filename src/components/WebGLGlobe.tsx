@@ -39,7 +39,6 @@ export interface WebGLGlobeProps {
 export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotate, atmosphere, onSelect }: WebGLGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
-  const hasAppliedInitialViewRef = useRef(false);
   const markerInteractionsRef = useRef(new WeakMap<HTMLElement, MarkerInteraction>());
   const activeMarkerInteractionRef = useRef<MarkerInteraction | null>(null);
   const pointerStartsRef = useRef(new Map<number, PointerStart>());
@@ -307,9 +306,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
   useEffect(() => {
     if (!primarySelected || !globeRef.current) return;
-    const preserveZoom = hasAppliedInitialViewRef.current;
-    hasAppliedInitialViewRef.current = true;
-    globeRef.current.pointOfView(getSelectionPointOfView(primarySelected, preserveZoom), 650);
+    globeRef.current.pointOfView(getSelectionPointOfView(primarySelected), 650);
   }, [primarySelected?.id]);
 
   const adjustZoom = (direction: "in" | "out") => {
