@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { AWS_REGIONS, AZURE_REGIONS, CLOUDFLARE_REGIONS, CLOUD_REGIONS, GCP_REGIONS, PROTON_REGIONS } from "./regions";
+import {
+  AKAMAI_REGIONS,
+  AWS_REGIONS,
+  AZURE_REGIONS,
+  CLOUDFLARE_REGIONS,
+  CLOUD_REGIONS,
+  DIGITALOCEAN_REGIONS,
+  GCP_REGIONS,
+  HETZNER_REGIONS,
+  IBM_REGIONS,
+  ORACLE_REGIONS,
+  OVHCLOUD_REGIONS,
+  PROTON_REGIONS,
+} from "./regions";
 
 describe("cloud region dataset", () => {
   it("contains every researched public-cloud region and announcement", () => {
@@ -8,7 +21,13 @@ describe("cloud region dataset", () => {
     expect(GCP_REGIONS).toHaveLength(43);
     expect(CLOUDFLARE_REGIONS).toHaveLength(341);
     expect(PROTON_REGIONS).toHaveLength(3);
-    expect(CLOUD_REGIONS).toHaveLength(496);
+    expect(HETZNER_REGIONS).toHaveLength(6);
+    expect(OVHCLOUD_REGIONS).toHaveLength(33);
+    expect(ORACLE_REGIONS).toHaveLength(45);
+    expect(IBM_REGIONS).toHaveLength(13);
+    expect(DIGITALOCEAN_REGIONS).toHaveLength(16);
+    expect(AKAMAI_REGIONS).toHaveLength(31);
+    expect(CLOUD_REGIONS).toHaveLength(640);
   });
 
   it("uses unique ids and valid coordinates", () => {
@@ -46,5 +65,26 @@ describe("cloud region dataset", () => {
     expect(PROTON_REGIONS.map((region) => region.country).sort()).toEqual(["Deutschland", "Norwegen", "Schweiz"]);
     expect(PROTON_REGIONS.find((region) => region.country === "Norwegen")?.coordinateAccuracy).toContain("genauer Ort nicht veröffentlicht");
     expect(PROTON_REGIONS.every((region) => region.infrastructureModel?.includes("eigene") || region.infrastructureModel?.includes("Eigene"))).toBe(true);
+  });
+
+  it("describes every new provider location with an official source and operating details", () => {
+    const addedRegions = [
+      ...HETZNER_REGIONS,
+      ...OVHCLOUD_REGIONS,
+      ...ORACLE_REGIONS,
+      ...IBM_REGIONS,
+      ...DIGITALOCEAN_REGIONS,
+      ...AKAMAI_REGIONS,
+    ];
+
+    expect(addedRegions).toHaveLength(144);
+    addedRegions.forEach((region) => {
+      expect(region.sourceLabel).toBeTruthy();
+      expect(region.infrastructureModel).toBeTruthy();
+      expect(region.serviceCoverage).toBeTruthy();
+      expect(region.coordinateAccuracy).toContain("keine Gebäudeadresse");
+    });
+    expect(OVHCLOUD_REGIONS.filter((region) => region.locationType === "local-zone")).toHaveLength(18);
+    expect(IBM_REGIONS.every((region) => region.zones === 3)).toBe(true);
   });
 });

@@ -645,6 +645,26 @@ button {
 .globe-stage__canvas {
   position: absolute;
   inset: 0;
+  --globe-marker-scale: 0.46;
+}
+
+.globe-stage__canvas[data-marker-selection="locked"]::after {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  z-index: 4;
+  padding: 5px 9px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: var(--shadow-resting);
+  color: var(--muted-foreground);
+  content: "Zum Auswählen näher heranzoomen";
+  font-size: 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
 }
 
 .globe-loading {
@@ -1044,10 +1064,10 @@ button {
   position: relative;
   display: flex;
   width: auto;
-  min-width: 10px;
-  height: 12px;
+  min-width: calc(10px * var(--globe-marker-scale));
+  height: calc(12px * var(--globe-marker-scale));
   align-items: center;
-  gap: 2px;
+  gap: calc(2px * var(--globe-marker-scale));
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -1067,10 +1087,10 @@ button {
 
 .globe-html-marker__dot {
   display: block;
-  width: 10px;
-  height: 10px;
+  width: calc(10px * var(--globe-marker-scale));
+  height: calc(10px * var(--globe-marker-scale));
   flex: 0 0 auto;
-  border: 2px solid #fff;
+  border: max(1px, calc(2px * var(--globe-marker-scale))) solid #fff;
   border-radius: 50%;
   background: var(--marker-color);
   box-shadow: 0 1px 4px rgb(3 14 25 / 48%);
@@ -1306,9 +1326,9 @@ button {
 
 .provider-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  grid-template-columns: 28px minmax(70px, 1fr) minmax(64px, 92px) auto;
   gap: 7px;
-  min-height: 49px;
+  min-height: 54px;
   align-items: center;
   padding: 0 10px;
   border-bottom: 1px solid var(--border);
@@ -1320,16 +1340,16 @@ button {
 
 .provider-row > span:nth-child(2) {
   min-width: 0;
-  overflow: hidden;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .provider-row small {
   color: var(--muted-foreground);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: right;
 }
 
 .toggle {

@@ -11,6 +11,7 @@ import {
   type GlobeMarker,
 } from "./globeMarkers";
 import { getSelectionPointOfView } from "./globeView";
+import { getGlobeMarkerZoomState } from "./globeMarkerZoom";
 import {
   findNearestMarkerTarget,
   isTapGesture,
@@ -38,12 +39,12 @@ export interface WebGLGlobeProps {
 export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotate, atmosphere, onSelect }: WebGLGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
-  const hasAppliedInitialViewRef = useRef(false);
   const markerInteractionsRef = useRef(new WeakMap<HTMLElement, MarkerInteraction>());
   const activeMarkerInteractionRef = useRef<MarkerInteraction | null>(null);
   const pointerStartsRef = useRef(new Map<number, PointerStart>());
   const hadMultipleTouchesRef = useRef(false);
   const touchPreviewRegionIdRef = useRef<string | null>(null);
+  const markerSelectionEnabledRef = useRef(false);
   const [size, setSize] = useState({ width: 700, height: 700 });
   const primarySelected = selectedRegions[0];
   const markers = useMemo(() => groupRegions(regions, clusterMarkers), [regions, clusterMarkers]);
@@ -63,6 +64,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     button.dataset.regionCodes = marker.regions.map((region) => region.code ?? region.id).join(" ");
     button.dataset.providerCount = String(marker.providers.length);
     button.setAttribute("aria-label", getMarkerAriaLabel(marker));
+    button.setAttribute("aria-disabled", markerSelectionEnabledRef.current ? "false" : "true");
     if (selectedRegions.some((selected) => marker.regions.some((region) => region.id === selected.id))) {
       button.classList.add("is-selected");
     }
@@ -102,14 +104,17 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
       regionList.append(regionLine);
     });
     const metaElement = document.createElement("span");
+    metaElement.className = "globe-html-marker__interaction-hint";
     const first = marker.regions[0];
-    metaElement.textContent = marker.regions.length > 1
+    const enabledHint = marker.regions.length > 1
       ? "Klicken, um alle Details zu öffnen"
       : first.zones
         ? `${first.zones} Zonen`
         : first.availabilityZones
           ? "Verfügbarkeitszonen unterstützt"
           : first.country;
+    metaElement.dataset.enabledText = enabledHint;
+    metaElement.textContent = markerSelectionEnabledRef.current ? enabledHint : "Zum Auswählen näher heranzoomen";
 
     tooltipElement.append(providerElement, nameElement, regionList, metaElement);
     button.append(tooltipElement);
@@ -141,6 +146,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     });
     button.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (!markerSelectionEnabledRef.current) return;
       showTooltip();
       onSelect(marker.regions);
     });
@@ -167,7 +173,8 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const getNearestInteraction = (clientX: number, clientY: number, pointerType: string) => {
+    const getNearestInteraction = (clientX: number, clientY: number, pointerType: string, requireSelectable = false) => {
+      if (requireSelectable && !markerSelectionEnabledRef.current) return null;
       const targets = [...container.querySelectorAll<HTMLElement>(".globe-html-marker")]
         .map((element) => {
           const interaction = markerInteractionsRef.current.get(element);
@@ -218,7 +225,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
       if (wasMultiTouch || !isTapGesture(start, { id: event.pointerId, x: event.clientX, y: event.clientY }, event.pointerType)) {
         return;
       }
-      const nearest = getNearestInteraction(event.clientX, event.clientY, event.pointerType);
+      const nearest = getNearestInteraction(event.clientX, event.clientY, event.pointerType, true);
       hideActiveTooltip();
       if (!nearest) return;
       activeMarkerInteractionRef.current = nearest;
@@ -254,6 +261,26 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
     };
   }, [onSelect]);
 
+  const updateMarkerZoom = useCallback(({ altitude }: { altitude: number }) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const state = getGlobeMarkerZoomState(altitude);
+    const selectionChanged = markerSelectionEnabledRef.current !== state.selectable;
+    markerSelectionEnabledRef.current = state.selectable;
+    container.style.setProperty("--globe-marker-scale", state.scale.toFixed(3));
+    container.dataset.markerScale = state.scale.toFixed(3);
+    container.dataset.markerSelection = state.selectable ? "enabled" : "locked";
+    if (!selectionChanged) return;
+    container.querySelectorAll<HTMLElement>(".globe-html-marker").forEach((element) => {
+      element.setAttribute("aria-disabled", state.selectable ? "false" : "true");
+    });
+    container.querySelectorAll<HTMLElement>(".globe-html-marker__interaction-hint").forEach((element) => {
+      element.textContent = state.selectable
+        ? element.dataset.enabledText ?? "Details öffnen"
+        : "Zum Auswählen näher heranzoomen";
+    });
+  }, []);
+
   useEffect(() => {
     if (!selectedRegions.some((region) => region.id === touchPreviewRegionIdRef.current)) {
       touchPreviewRegionIdRef.current = null;
@@ -279,9 +306,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
   useEffect(() => {
     if (!primarySelected || !globeRef.current) return;
-    const preserveZoom = hasAppliedInitialViewRef.current;
-    hasAppliedInitialViewRef.current = true;
-    globeRef.current.pointOfView(getSelectionPointOfView(primarySelected, preserveZoom), 650);
+    globeRef.current.pointOfView(getSelectionPointOfView(primarySelected), 650);
   }, [primarySelected?.id]);
 
   const adjustZoom = (direction: "in" | "out") => {
@@ -298,7 +323,7 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
 
   return (
     <>
-      <div className="globe-stage__canvas" ref={containerRef} data-render-mode="3d">
+      <div className="globe-stage__canvas" ref={containerRef} data-render-mode="3d" data-marker-selection="locked">
         <Globe
           ref={globeRef}
           width={size.width}
@@ -330,6 +355,8 @@ export function WebGLGlobe({ regions, selectedRegions, clusterMarkers, autoRotat
           ringPropagationSpeed={2.4}
           ringRepeatPeriod={1150}
           enablePointerInteraction
+          onZoom={updateMarkerZoom}
+          onGlobeReady={() => updateMarkerZoom(globeRef.current?.pointOfView() ?? { altitude: 1.92 })}
         />
       </div>
       <div className="globe-controls" aria-label="Kartensteuerung">

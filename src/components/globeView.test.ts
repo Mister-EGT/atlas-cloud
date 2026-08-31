@@ -4,12 +4,15 @@ import { getSelectionPointOfView } from "./globeView";
 describe("globe selection view", () => {
   const region = { lat: 50.1109, lng: 8.6821 };
 
-  it("sets the intended altitude for the initial view", () => {
-    expect(getSelectionPointOfView(region, false)).toEqual({ ...region, altitude: 1.85 });
+  it("preserves the current zoom for the first selection", () => {
+    expect(getSelectionPointOfView(region)).toEqual(region);
+    expect(getSelectionPointOfView(region)).not.toHaveProperty("altitude");
   });
 
-  it("does not change the current zoom after selecting another location", () => {
-    expect(getSelectionPointOfView(region, true)).toEqual(region);
-    expect(getSelectionPointOfView(region, true)).not.toHaveProperty("altitude");
+  it("preserves the current zoom for every later selection", () => {
+    const laterRegion = { lat: -33.4489, lng: -70.6693 };
+
+    expect(getSelectionPointOfView(laterRegion)).toEqual(laterRegion);
+    expect(getSelectionPointOfView(laterRegion)).not.toHaveProperty("altitude");
   });
 });

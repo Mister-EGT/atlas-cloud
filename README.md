@@ -1,27 +1,34 @@
 # Atlas Cloud
 
-Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung der veröffentlichten Cloud-Regionen von Microsoft Azure, Amazon Web Services und Google Cloud, der Edge-Rechenzentren von Cloudflare sowie der veröffentlichten Proton-Rechenzentren. Im Zentrum steht ein frei dreh- und zoombarer 3D-Globus. Marker zeigen Details beim Überfahren und laden beim Anklicken die vollständige Standortansicht.
+Atlas Cloud ist eine lokale, interaktive Web App zur Erkundung veröffentlichter Cloud-Regionen, Local Zones, Edge-Standorte und Rechenzentren von elf Anbietern. Im Zentrum steht ein frei dreh- und zoombarer 3D-Globus. Marker zeigen Details beim Überfahren und laden nach ausreichendem Heranzoomen beim Anklicken die vollständige Standortansicht.
 
 ## Funktionsumfang
 
-- 496 recherchierte Einträge, davon 494 aktive und 2 angekündigte Standorte
+- 640 recherchierte Einträge, davon 638 aktive und 2 angekündigte Standorte
 - Azure: 68 Einträge aus Public Cloud, China, Government und DoD
 - AWS: 41 Einträge, davon 39 aktiv und 2 angekündigt
 - Google Cloud: 43 aktive Regionen
 - Cloudflare: 341 einzeln im offiziellen Statussystem geführte Edge-Rechenzentren
 - Proton: 3 offiziell belegte Infrastrukturstandorte in der Schweiz, Deutschland und Norwegen
+- Hetzner: 6 Cloud-Standorte
+- OVHcloud: 15 Public-Cloud-Regionen und 18 Local Zones
+- Oracle Cloud: 45 kommerzielle OCI-Regionen
+- IBM Cloud: 13 VPC-Regionen mit jeweils 3 Zonen
+- DigitalOcean: 16 aktive Rechenzentren
+- Akamai Cloud: 31 Compute-Regionen
 - Suche nach Region, Standort, Land oder Regionscode
 - Filter nach Anbieter, Status und Kontinent
 - Gruppierbare Marker, automatische Rotation und Atmosphäre
 - Automatische 2D-Kompatibilitätsansicht, wenn WebGL nicht verfügbar ist
-- Anbieterkennzeichnung für Azure, AWS, Google Cloud, Cloudflare und Proton
+- Anbieterkennzeichnung und Filter für alle elf Anbieter
+- Zoomabhängige 3D-Markergröße und Auswahl erst ab einer definierten Nahansicht
 - Detailansicht mit Standortart, Cloud-Umgebung, Betriebsmodell, Leistungsumfang, Ausfallschutz, Regions- oder Colo-Code, Zonen, Zugriff, Netzwerkregion, Standortoffenlegung, Koordinatengenauigkeit und offizieller Quelle
 - Responsive Oberfläche für Desktop, Tablet und Mobilgeräte
 - Vollständig lokaler Betrieb ohne API-Schlüssel oder externes Backend
 
 ## Datenabdeckung
 
-Cloud-Anbieter veröffentlichen in der Regel Regionen und Metropolstandorte, aber aus Sicherheitsgründen keine vollständigen Listen einzelner Gebäudeadressen. Atlas Cloud visualisiert deshalb die offiziellen Cloud-Regionen sowie die im Cloudflare-Statussystem einzeln geführten Edge-Rechenzentren. Die Marker verwenden Stadt-, Flughafen-, Bundesstaats- oder Metropolmittelpunkte und sind nicht als exakte Gebäudeadresse zu verstehen.
+Cloud-Anbieter veröffentlichen in der Regel Regionen und Metropolstandorte, aber aus Sicherheitsgründen keine vollständigen Listen einzelner Gebäudeadressen. Atlas Cloud visualisiert deshalb offizielle Cloud-Regionen, OVHcloud Local Zones, Cloudflare-Edge-Rechenzentren und veröffentlichte private Infrastrukturstandorte. Die Marker verwenden Stadt-, Flughafen-, Bundesstaats- oder Metropolmittelpunkte und sind nicht als exakte Gebäudeadresse zu verstehen.
 
 Cloudflare nennt auf seiner Netzwerkseite 348 Städte. Das öffentliche Statussystem weist davon aktuell 341 Standorte mit eindeutigem dreistelligem Colo-Code und Kontinentzuordnung einzeln aus. Nur diese einzeln belegbaren Standorte werden als Pins dargestellt. Cloudflare-Standorte sind Edge-Rechenzentren im globalen Anycast-Netzwerk und keine klassischen Public-Cloud-Regionen.
 
@@ -46,6 +53,12 @@ Datenstand: 29. August 2026.
 - [Proton: Technologische Unabhängigkeit](https://proton.me/blog/sustaining-mission-over-time)
 - [Proton: Primäres Rechenzentrum Zürich](https://proton.me/support/who-owns-protonmail)
 - [Proton: Rechenzentrum Frankfurt](https://proton.me/blog/crv-investment-other-news)
+- [Hetzner Cloud Locations](https://docs.hetzner.com/cloud/general/locations/)
+- [OVHcloud Global Infrastructure](https://www.ovhcloud.com/en/about-us/global-infrastructure/regions/)
+- [Oracle Cloud Infrastructure Regions](https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm)
+- [IBM Cloud VPC Regions](https://cloud.ibm.com/docs/vpc?topic=vpc-creating-a-vpc-in-a-different-region)
+- [DigitalOcean Regional Availability](https://docs.digitalocean.com/platform/regional-availability/)
+- [Akamai Cloud Computing Regions](https://www.akamai.com/why-akamai/global-infrastructure/availability)
 
 ## Lokal starten
 
@@ -65,7 +78,7 @@ npm test
 npm run build
 ```
 
-Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, geplante Regionen, souveräne Partitionen, die veröffentlichte AWS-Zonensumme sowie Standortart und Colo-Codes der Cloudflare-Rechenzentren.
+Die Datentests prüfen Anbieterzählungen, eindeutige IDs, gültige Koordinaten, offizielle HTTPS-Quellen, Standortdetails, geplante Regionen, souveräne Partitionen, die veröffentlichte AWS-Zonensumme sowie die verschiedenen Standortarten.
 
 Der 3D-Globus wird als eigener JavaScript-Chunk erst bei WebGL-Unterstützung geladen. Dadurch bleibt die erste Übertragung klein und Browser ohne WebGL laden ausschließlich die 2D-Kompatibilitätsansicht.
 

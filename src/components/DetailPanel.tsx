@@ -31,6 +31,7 @@ function getAvailability(region: CloudRegion) {
 
 function getLocationType(region: CloudRegion) {
   if (region.locationType === "edge-location") return "Edge-Rechenzentrum";
+  if (region.locationType === "local-zone") return "Local Zone";
   if (region.locationType === "private-data-center") return "Privates Rechenzentrum";
   return "Cloud-Region";
 }
@@ -39,6 +40,9 @@ function getEnvironment(region: CloudRegion) {
   if (region.scope === "sovereign") return "Sovereign Cloud";
   if (region.provider === "cloudflare") return "Globales Anycast-Netzwerk";
   if (region.provider === "proton") return "Private Proton-Infrastruktur";
+  if (region.locationType === "local-zone") return "Public Cloud Local Zone";
+  if (region.provider === "ibm") return "Public Cloud VPC";
+  if (region.provider === "akamai") return "Akamai Connected Cloud";
   return "Public Cloud";
 }
 
@@ -209,7 +213,7 @@ export function DetailPanel({ regions }: { regions: CloudRegion[] }) {
       {regions.length === 1 ? <SingleRegionDetails region={regions[0]} /> : <GroupedRegionDetails regions={regions} />}
 
       <p className="source-note">
-        Gezeigt werden veröffentlichte Cloud-Regionen, Cloudflare-Edge-Standorte und Proton-Rechenzentren. Pins markieren veröffentlichte Ortsangaben oder ausdrücklich gekennzeichnete Näherungswerte, keine Gebäudeadressen.
+        Gezeigt werden veröffentlichte Cloud-Regionen, Local Zones, Edge-Standorte und private Rechenzentren. Pins markieren veröffentlichte Ortsangaben oder ausdrücklich gekennzeichnete Näherungswerte, keine Gebäudeadressen.
       </p>
     </Panel>
   );

@@ -11,17 +11,18 @@ describe("grouped location details", () => {
       marker.regions.some((region) => region.code === "southamerica-west1"),
     );
 
-    expect(santiago?.regions).toHaveLength(4);
+    expect(santiago?.regions).toHaveLength(5);
 
     const html = renderToStaticMarkup(<DetailPanel regions={santiago!.regions} />);
 
-    expect(html.match(/<details/g)).toHaveLength(4);
-    expect(html.match(/Standortart/g)).toHaveLength(4);
-    expect(html.match(/Pin-Genauigkeit/g)).toHaveLength(4);
+    expect(html.match(/<details/g)).toHaveLength(5);
+    expect(html.match(/Standortart/g)).toHaveLength(5);
+    expect(html.match(/Pin-Genauigkeit/g)).toHaveLength(5);
     expect(html).toContain("Details zu Chile Central von Microsoft Azure anzeigen");
     expect(html).toContain("Details zu Chile von Amazon Web Services anzeigen");
     expect(html).toContain("Details zu Santiago von Google Cloud anzeigen");
     expect(html).toContain("Details zu Santiago Edge von Cloudflare anzeigen");
+    expect(html).toContain("Details zu Chile Central von Oracle Cloud Infrastructure anzeigen");
     expect(html).toContain("CDN, DNS, DDoS-Schutz und Edge-Dienste");
     expect(html).toContain("Code noch nicht veröffentlicht");
   });

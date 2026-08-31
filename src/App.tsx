@@ -6,7 +6,19 @@ import { SettingsPanel, type ViewSettings } from "./components/SettingsPanel";
 import { CLOUD_REGIONS, type CloudRegion } from "./data/regions";
 
 const initialSettings: ViewSettings = {
-  providers: { azure: true, aws: true, gcp: true, cloudflare: true, proton: true },
+  providers: {
+    azure: true,
+    aws: true,
+    gcp: true,
+    cloudflare: true,
+    proton: true,
+    hetzner: true,
+    ovhcloud: true,
+    oracle: true,
+    ibm: true,
+    digitalocean: true,
+    akamai: true,
+  },
   status: "all",
   continent: "all",
   clusterMarkers: true,

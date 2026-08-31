@@ -12,6 +12,20 @@ import {
 import { Panel } from "./Panel";
 import { ProviderMark } from "./ProviderMark";
 
+const PROVIDER_COUNT_LABELS: Record<ProviderId, string> = {
+  azure: "Regionen",
+  aws: "Regionen",
+  gcp: "Regionen",
+  cloudflare: "Edge-Standorte",
+  proton: "Rechenzentren",
+  hetzner: "Standorte",
+  ovhcloud: "Regionen und Local Zones",
+  oracle: "Regionen",
+  ibm: "VPC-Regionen",
+  digitalocean: "Rechenzentren",
+  akamai: "Regionen",
+};
+
 export type StatusFilter = "all" | "active" | "planned";
 
 export interface ViewSettings {
@@ -112,7 +126,7 @@ export function SettingsPanel({
             <div className="provider-row" key={providerId}>
               <ProviderMark provider={providerId} compact />
               <span>{PROVIDERS[providerId].shortName}</span>
-              <small>{count} {providerId === "cloudflare" ? "Edge-Standorte" : providerId === "proton" ? "Rechenzentren" : "Regionen"}</small>
+              <small>{count} {PROVIDER_COUNT_LABELS[providerId]}</small>
               <Toggle
                 label={`${PROVIDERS[providerId].shortName} anzeigen`}
                 checked={settings.providers[providerId]}
